@@ -26,6 +26,11 @@
 }
 
 /* Apply light theme by default */
+html {
+    background-color: var(--background-color-light);
+    color: var(--primary-text-light);
+}
+
 body {
     background-color: var(--background-color-light);
     color: var(--primary-text-light);
@@ -34,6 +39,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Apply dark theme when data-theme is 'dark' */
@@ -49,6 +55,14 @@ html[data-theme="dark"] .editor-textarea {
 
 html[data-theme="dark"] .top-bar {
     border-bottom-color: var(--secondary-shapes-dark);
+}
+
+html[data-theme="dark"] .toolbar svg {
+    color: var(--secondary-text-dark);
+}
+
+html[data-theme="dark"] .toolbar button:hover svg {
+    color: var(--primary-text-dark);
 }
 
 
@@ -98,58 +112,65 @@ html[data-theme="dark"] .top-bar {
 }
 
 /* ==============================================
-  TOOLBAR
+  TOOLBAR & ICONS
   ==============================================
 */
 .toolbar {
     display: flex;
     align-items: center;
-    gap: 8px;
 }
+
+.toolbar > div {
+    display: flex;
+    align-items: center;
+}
+
 .toolbar button {
     background: none;
     border: none;
     padding: 8px;
-    margin: 0;
+    margin: 0 2px;
     cursor: pointer;
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--secondary-buttons-light);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    line-height: 1; 
 }
+
 .toolbar button:hover {
-    background-color: var(--secondary-shapes-light);
+    background-color: rgba(0,0,0,0.05);
+}
+
+html[data-theme="dark"] .toolbar button:hover {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.toolbar svg {
+    width: 22px;
+    height: 22px;
+    color: var(--secondary-text-light);
+    transition: color 0.2s ease-in-out;
+}
+
+.toolbar button:hover svg {
     color: var(--primary-text-light);
 }
-html[data-theme="dark"] .toolbar button:hover {
-    background-color: var(--secondary-shapes-dark);
-    color: var(--primary-text-dark);
-}
-.toolbar svg {
-    width: 20px;
-    height: 20px;
-}
+
 .separator {
     width: 1px;
     height: 20px;
     background-color: var(--secondary-shapes-light);
-    margin: 0 8px;
+    margin: 0 12px;
+    transition: opacity 0.3s ease;
 }
+
 html[data-theme="dark"] .separator {
     background-color: var(--secondary-shapes-dark);
 }
 
-/* This is the new, important rule! It makes the button groups horizontal. */
-.toolbar > div {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 /* ==============================================
-  ICON TOGGLING LOGIC
+  ICON TOGGLING & MINIMIZE LOGIC
   ==============================================
 */
 /* By default, show light mode and maximize icons */
@@ -170,26 +191,28 @@ html[data-theme="dark"] #theme-toggle .light-icon {
     display: none;
 }
 
-/* When toolbar is minimized, swap the min/max icons and hide other sections */
-body.toolbar-minimized #minimize-toggle .minimize-icon {
+/* When toolbar is minimized, show the correct icon... */
+.toolbar.minimized #minimize-toggle .minimize-icon {
     display: block;
 }
-body.toolbar-minimized #minimize-toggle .maximize-icon {
+.toolbar.minimized #minimize-toggle .maximize-icon {
     display: none;
 }
-body.toolbar-minimized .toolbar > .app-settings,
-body.toolbar-minimized .toolbar > .other-links,
-body.toolbar-minimized .toolbar > .separator {
+/* ...and hide the non-essential sections. */
+.toolbar.minimized .app-settings,
+.toolbar.minimized .other-links,
+.toolbar.minimized .separator {
     display: none;
 }
 
+
 /* ==============================================
-  EDITOR TEXTAREA
+  EDITOR TEXT AREA
   ==============================================
 */
 .editor-container {
     flex-grow: 1;
-    padding: 24px;
+    padding: 16px;
     display: flex;
     justify-content: center;
 }
@@ -199,7 +222,7 @@ body.toolbar-minimized .toolbar > .separator {
     height: 100%;
     border: none;
     outline: none;
-    background-color: var(--background-color-light);
+    background-color: transparent;
     color: var(--primary-text-light);
     font-family: var(--font-editor);
     font-size: 16px;
