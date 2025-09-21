@@ -1,0 +1,23 @@
+{
+    "name": "textfile-me",
+    "version": "1.0.0",
+    "description": "An ultra-simple, browser-based text editor that prioritizes ease of use and privacy.",
+    "main": "app.js",
+    "scripts": {
+        "start": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "keywords": [
+        "text-editor",
+        "pwa",
+        "offline-first",
+        "yjs",
+        "webrtc"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "vite": "^7.1.6"
+    }
+}

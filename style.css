@@ -1,0 +1,217 @@
+/* ==============================================
+  BASIC SETUP & CUSTOM PROPERTIES (VARIABLES)
+  ==============================================
+*/
+:root {
+    /* Color Palette - Light Mode */
+    --background-color-light: #F5F5F5;
+    --secondary-text-light: #6B6B6B;
+    --secondary-buttons-light: #A1A1A1;
+    --secondary-shapes-light: #D9D9D9;
+    --primary-text-light: #070707;
+
+    /* Color Palette - Dark Mode */
+    --background-color-dark: #1E1E1E;
+    --secondary-text-dark: #6B6B6B;
+    --secondary-buttons-dark: #A1A1A1;
+    --secondary-shapes-dark: #D9D9D9;
+    --primary-text-dark: #CCCCCC;
+    
+    /* Shared Accent Color */
+    --accent-color: #FF4D3A;
+
+    /* Font Families */
+    --font-primary: 'Inter', sans-serif;
+    --font-editor: 'Tabular', monospace;
+}
+
+/* Apply light theme by default */
+body {
+    background-color: var(--background-color-light);
+    color: var(--primary-text-light);
+    font-family: var(--font-primary);
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Apply dark theme when data-theme is 'dark' */
+html[data-theme="dark"] body {
+    background-color: var(--background-color-dark);
+    color: var(--primary-text-dark);
+}
+
+html[data-theme="dark"] .editor-textarea {
+    background-color: var(--background-color-dark);
+    color: var(--primary-text-dark);
+}
+
+html[data-theme="dark"] .top-bar {
+    border-bottom-color: var(--secondary-shapes-dark);
+}
+
+
+/* ==============================================
+  FONT DEFINITIONS
+  ==============================================
+*/
+@font-face {
+    font-family: 'Tabular';
+    src: url('/fonts/Tabular-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Tabular';
+    src: url('/fonts/Tabular-Semibold.woff') format('woff');
+    font-weight: 600;
+    font-style: normal;
+}
+
+/* ==============================================
+  MAIN LAYOUT & TOP BAR
+  ==============================================
+*/
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    height: 60px;
+    border-bottom: 1px solid var(--secondary-shapes-light);
+    flex-shrink: 0;
+}
+.top-bar-left, .top-bar-right {
+    flex: 1;
+    font-family: var(--font-editor);
+    font-size: 14px;
+    color: var(--secondary-text-light);
+}
+.top-bar-right {
+    text-align: right;
+}
+.top-bar-center {
+    flex: 3;
+    display: flex;
+    justify-content: center;
+}
+
+/* ==============================================
+  TOOLBAR
+  ==============================================
+*/
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.toolbar button {
+    background: none;
+    border: none;
+    padding: 8px;
+    margin: 0;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--secondary-buttons-light);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.toolbar button:hover {
+    background-color: var(--secondary-shapes-light);
+    color: var(--primary-text-light);
+}
+html[data-theme="dark"] .toolbar button:hover {
+    background-color: var(--secondary-shapes-dark);
+    color: var(--primary-text-dark);
+}
+.toolbar svg {
+    width: 20px;
+    height: 20px;
+}
+.separator {
+    width: 1px;
+    height: 20px;
+    background-color: var(--secondary-shapes-light);
+    margin: 0 8px;
+}
+html[data-theme="dark"] .separator {
+    background-color: var(--secondary-shapes-dark);
+}
+
+/* This is the new, important rule! It makes the button groups horizontal. */
+.toolbar > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ==============================================
+  ICON TOGGLING LOGIC
+  ==============================================
+*/
+/* By default, show light mode and maximize icons */
+#theme-toggle .dark-icon,
+#minimize-toggle .minimize-icon {
+    display: none;
+}
+#theme-toggle .light-icon,
+#minimize-toggle .maximize-icon {
+    display: block;
+}
+
+/* When dark mode is active, swap the theme icons */
+html[data-theme="dark"] #theme-toggle .dark-icon {
+    display: block;
+}
+html[data-theme="dark"] #theme-toggle .light-icon {
+    display: none;
+}
+
+/* When toolbar is minimized, swap the min/max icons and hide other sections */
+body.toolbar-minimized #minimize-toggle .minimize-icon {
+    display: block;
+}
+body.toolbar-minimized #minimize-toggle .maximize-icon {
+    display: none;
+}
+body.toolbar-minimized .toolbar > .app-settings,
+body.toolbar-minimized .toolbar > .other-links,
+body.toolbar-minimized .toolbar > .separator {
+    display: none;
+}
+
+/* ==============================================
+  EDITOR TEXTAREA
+  ==============================================
+*/
+.editor-container {
+    flex-grow: 1;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+}
+.editor-textarea {
+    width: 100%;
+    max-width: 800px;
+    height: 100%;
+    border: none;
+    outline: none;
+    background-color: var(--background-color-light);
+    color: var(--primary-text-light);
+    font-family: var(--font-editor);
+    font-size: 16px;
+    line-height: 1.6;
+    resize: none;
+    padding: 0;
+    caret-color: var(--accent-color);
+}
+.editor-textarea::placeholder {
+    color: var(--secondary-text-light);
+}
+html[data-theme="dark"] .editor-textarea::placeholder {
+    color: var(--secondary-text-dark);
+}
+
