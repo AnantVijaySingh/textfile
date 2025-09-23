@@ -22,7 +22,6 @@ Your Project Folder Structure:
 
 textfile-me/
 ├── dist/                # Vite will create this folder for our final, deployed code
-├── icons/
 ├── node_modules/        # Where our development tools (Vite) are installed
 ├── index.html
 ├── style.css

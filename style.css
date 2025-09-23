@@ -237,4 +237,3 @@ html[data-theme="dark"] #theme-toggle .light-icon {
 html[data-theme="dark"] .editor-textarea::placeholder {
     color: var(--secondary-text-dark);
 }
-
