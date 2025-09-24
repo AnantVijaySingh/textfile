@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolbar = document.getElementById('toolbar');
     const editorTextarea = document.getElementById('editor');
     const syncStatus = document.getElementById('sync-status');
+    const fileNameInput = document.getElementById('file-name-input');
     
     const formatButtons = {
         h1: document.querySelector('button[title="Title"]'),
@@ -22,8 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Y.js Setup ---
     const ydoc = new Y.Doc();
     const persistence = new IndexeddbPersistence('textfile-me-document', ydoc);
+    
+    // Bind editor content
     const ytext = ydoc.getText('editor');
     new TextAreaBinding(ytext, editorTextarea);
+
+    // Bind filename
+    const yFilename = ydoc.getText('filename');
 
     let saveTimer = null;
     const SAVE_DELAY = 1000;
@@ -32,6 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Content synced with the database.');
         syncStatus.textContent = 'Saved';
         if(saveTimer) clearTimeout(saveTimer);
+
+        // Load initial filename or set a default
+        const currentFilename = yFilename.toString();
+        if (!currentFilename) {
+            yFilename.insert(0, 'Untitled.txt');
+        } else {
+            updateTitle(currentFilename);
+        }
     });
 
     ydoc.on('update', (update, origin) => {
@@ -67,6 +81,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     minimizeToggleButton.addEventListener('click', () => {
         toolbar.classList.toggle('minimized');
+    });
+
+    // --- Filename Handling ---
+    function updateTitle(name) {
+        const newTitle = name || 'Untitled.txt';
+        if (fileNameInput.value !== newTitle) {
+            fileNameInput.value = newTitle;
+        }
+        document.title = `${newTitle} - textfile.me`;
+    }
+
+    fileNameInput.addEventListener('input', () => {
+        ydoc.transact(() => {
+            yFilename.delete(0, yFilename.length);
+            yFilename.insert(0, fileNameInput.value);
+        });
+    });
+
+    yFilename.observe(event => {
+        updateTitle(yFilename.toString());
     });
     
     // --- Advanced Text Formatting Logic ---
@@ -111,13 +145,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prevLineStart = fullText.lastIndexOf('\n', currentLineStart - 2) + 1;
                 const prevLine = fullText.substring(prevLineStart, currentLineStart - 1);
                 if (prevLine.match(/^\+[-]+\+$/)) {
-                    const nextLineStart = currentLineEnd + 1;
-                    const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
-                    const nextLine = fullText.substring(nextLineStart, nextLineEnd);
-                    if (nextLine.match(/^\+[-]+\+$/)) {
-                        start = prevLineStart;
-                        end = nextLineEnd;
+                    // This logic needs to find the end of the block
+                    let blockEnd = currentLineEnd;
+                    let nextLine = fullText.substring(blockEnd + 1, fullText.indexOf('\n', blockEnd + 1));
+                    while(nextLine.startsWith('| ') && nextLine.endsWith(' |')) {
+                        blockEnd = fullText.indexOf('\n', blockEnd + 1);
+                        if (blockEnd === -1) {
+                            blockEnd = fullText.length;
+                            break;
+                        }
+                        nextLine = fullText.substring(blockEnd + 1, fullText.indexOf('\n', blockEnd + 1));
                     }
+                    const finalBorderIndex = fullText.indexOf('\n', blockEnd + 1);
+                    end = finalBorderIndex !== -1 ? finalBorderIndex : fullText.length;
+                    start = prevLineStart;
                 }
             } else if (type === 'h2') {
                  const nextLineStart = currentLineEnd + 1;
@@ -139,12 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
             h1: {
                 regex: /^\+[-]+\+\n((?:\| (?:.*?) \|\n)*)\+[-]+\+$/,
                 apply: text => {
-                    const lines = text.split('\n');
+                    const lines = text.split('\n').filter(l => l.trim() !== '' || text.split('\n').length > 1);
+                    if (lines.length === 0) return '';
                     const maxLength = Math.max(...lines.map(line => line.length));
                     const border = '-'.repeat(maxLength + 2);
                     let result = `+${border}+\n`;
                     lines.forEach(line => {
-                        if (line.trim() === '' && lines.length === 1) return; // Don't format empty single lines
                         result += `| ${line.padEnd(maxLength, ' ')} |\n`;
                     });
                     result += `+${border}+`;
@@ -155,10 +196,8 @@ document.addEventListener('DOMContentLoaded', () => {
             h2: {
                 regex: /^(.*)\n([=]+)$/,
                 apply: text => {
-                    if (text.trim() === '') return text;
-                    const lines = text.split('\n');
-                    // Handle case where selection ends in a newline, creating an empty string in the array
-                    if (lines[lines.length - 1] === '') lines.pop();
+                    const lines = text.split('\n').filter(l => l.trim() !== '' || text.split('\n').length > 1);
+                    if (lines.length === 0) return '';
                     return lines.map(line => `${line}\n${'='.repeat(line.length)}`).join('\n');
                 },
                 revert: (text, match) => (match[1].trim().length === match[2].trim().length) ? match[1] : text

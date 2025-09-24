@@ -21,7 +21,7 @@
     --accent-color: #FF4D3A;
 
     /* Font Families */
-    --font-primary: 'Tabular', monospace;
+    --font-primary: 'Tabular', sans-serif;
     --font-editor: 'Tabular', monospace;
 }
 
@@ -109,6 +109,35 @@ html[data-theme="dark"] .toolbar button:hover svg {
     flex: 3;
     display: flex;
     justify-content: center;
+}
+
+.file-name-input {
+    background-color: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-editor);
+    font-size: 14px;
+    color: var(--secondary-text-light);
+    width: 100%;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.file-name-input:hover {
+    background-color: rgba(0,0,0,0.05);
+}
+
+.file-name-input:focus {
+    box-shadow: 0 0 0 2px var(--accent-color);
+}
+
+html[data-theme="dark"] .file-name-input {
+    color: var(--secondary-text-dark);
+}
+
+html[data-theme="dark"] .file-name-input:hover {
+    background-color: rgba(255,255,255,0.05);
 }
 
 /* ==============================================
@@ -237,3 +266,4 @@ html[data-theme="dark"] #theme-toggle .light-icon {
 html[data-theme="dark"] .editor-textarea::placeholder {
     color: var(--secondary-text-dark);
 }
+
