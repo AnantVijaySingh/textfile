@@ -1,11 +1,7 @@
-// Import the necessary modules from the packages you installed
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
-// You correctly identified this named export
 import { TextAreaBinding } from 'y-textarea';
 
-// Textfile.me - Main application logic will go here.
-// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM Element Selection ---
@@ -13,9 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const minimizeToggleButton = document.getElementById('minimize-toggle');
     const toolbar = document.getElementById('toolbar');
     const editorTextarea = document.getElementById('editor');
-    const syncStatus = document.getElementById('sync-status'); // For status updates
+    const syncStatus = document.getElementById('sync-status');
     
-    // Get all formatting buttons
     const formatButtons = {
         h1: document.querySelector('button[title="Title"]'),
         h2: document.querySelector('button[title="Bold"]'),
@@ -24,48 +19,45 @@ document.addEventListener('DOMContentLoaded', () => {
         divider: document.querySelector('button[title="Divider"]')
     };
 
-    // --- Y.js Setup for Local Persistence ---
-    
-    // 1. Create a Y.js document.
+    // --- Y.js Setup ---
     const ydoc = new Y.Doc();
-    
-    // 2. Connect the document to the browser's database (IndexedDB).
     const persistence = new IndexeddbPersistence('textfile-me-document', ydoc);
-    
-    // 3. Handle the persistence events to update the UI status.
-    let saveTimer = null; // A variable to hold our timer
-    
-    // This now primarily handles the initial load status.
+    const ytext = ydoc.getText('editor');
+    new TextAreaBinding(ytext, editorTextarea);
+
+    let saveTimer = null;
+    const SAVE_DELAY = 1000;
+
     persistence.on('synced', () => {
         console.log('Content synced with the database.');
-        syncStatus.textContent = 'Saved'; 
+        syncStatus.textContent = 'Saved';
+        if(saveTimer) clearTimeout(saveTimer);
     });
 
-    // This handles the status during user activity.
     ydoc.on('update', (update, origin) => {
-        // Only trigger for user updates, not database loads.
         if (origin !== persistence) {
             syncStatus.textContent = 'Saving...';
-            
-            // Clear the previous timer to reset the delay
-            clearTimeout(saveTimer);
-            
-            // Set a new timer that will mark as "Saved" after a pause in typing.
+            if(saveTimer) clearTimeout(saveTimer);
             saveTimer = setTimeout(() => {
                 syncStatus.textContent = 'Saved';
-            }, 2500); // 2.5 second delay
+            }, SAVE_DELAY);
         }
     });
 
+    // --- Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered successfully:', registration);
+                })
+                .catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+        });
+    }
 
-    // 4. Get a shareable text field from our document.
-    const ytext = ydoc.getText('editor');
-    
-    // 5. Create an instance of the TextAreaBinding class to link the editor.
-    const binding = new TextAreaBinding(ytext, editorTextarea);
-
-
-    // --- Theme Toggling ---
+    // --- UI Logic ---
     themeToggleButton.addEventListener('click', () => {
         const root = document.documentElement;
         const currentTheme = root.getAttribute('data-theme');
@@ -73,90 +65,159 @@ document.addEventListener('DOMContentLoaded', () => {
         root.setAttribute('data-theme', newTheme);
     });
 
-    // --- Toolbar Minimization ---
     minimizeToggleButton.addEventListener('click', () => {
         toolbar.classList.toggle('minimized');
     });
     
-    // --- Text Formatting Logic ---
-    
+    // --- Advanced Text Formatting Logic ---
+
     /**
-     * Applies ASCII-based formatting to the selected text in the textarea.
-     * @param {string} type - The type of format to apply ('h1', 'h2', 'bullet', 'checkbox', 'divider').
+     * Gets the text selection and intelligently expands it based on the format type.
+     * For block formats, it expands to full lines.
+     * For H1/H2, it checks surrounding lines to correctly identify blocks for toggling off.
+     * @param {string} type - The format type ('h1', 'h2', etc.)
+     * @returns {{start: number, end: number, text: string}}
      */
-    function applyFormat(type) {
-        const start = editorTextarea.selectionStart;
-        const end = editorTextarea.selectionEnd;
-        // With Y.js, we get the text from the ytext object
-        const fullText = ytext.toString();
-        const selectedText = fullText.substring(start, end);
+    function getExtendedSelection(type) {
+        const fullText = editorTextarea.value;
+        let start = editorTextarea.selectionStart;
+        let end = editorTextarea.selectionEnd;
+        const isCursor = start === end;
 
-        // Divider is a special case as it doesn't need selected text
-        if (type !== 'divider' && !selectedText) return; 
+        // For block formats, always expand to full lines.
+        if (['h1', 'h2', 'bullet', 'checkbox'].includes(type)) {
+            start = fullText.lastIndexOf('\n', start - 1) + 1;
+            
+            // If selection ends right on a newline, we use that as the end.
+            if (end > 0 && fullText[end - 1] === '\n') {
+                 end = end;
+            } else {
+                const endOfLastSelectedLine = fullText.indexOf('\n', end);
+                if (endOfLastSelectedLine !== -1) {
+                    end = endOfLastSelectedLine;
+                } else {
+                    end = fullText.length; // Reached the end of the file
+                }
+            }
+        }
 
-        let formattedText = '';
+        // If it's just a cursor (no selection), check if we're inside a format block to expand the selection for toggling.
+        if (isCursor) {
+            const currentLineStart = fullText.lastIndexOf('\n', start - 1) + 1;
+            const currentLineEnd = fullText.indexOf('\n', start) !== -1 ? fullText.indexOf('\n', start) : fullText.length;
+            const currentLine = fullText.substring(currentLineStart, currentLineEnd);
 
-        switch (type) {
-            case 'h1':
-                // Wraps the selected line(s) in a box
-                const lines = selectedText.split('\n');
-                const maxLength = Math.max(...lines.map(line => line.length));
-                const border = '-'.repeat(maxLength + 2);
-                formattedText = `+${border}+\n`;
-                lines.forEach(line => {
-                    formattedText += `| ${line.padEnd(maxLength, ' ')} |\n`;
-                });
-                formattedText += `+${border}+`;
-                break;
-
-            case 'h2':
-                // Underlines the selected line(s)
-                formattedText = selectedText.split('\n').map(line => {
-                    if (line.trim() === '') return line;
-                    return `${line}\n${'='.repeat(line.length)}`;
-                }).join('\n');
-                break;
-
-            case 'bullet':
-                // Prefixes each line with a bullet
-                formattedText = selectedText.split('\n')
-                    .map(line => line.trim() === '' ? line : `|-> ${line}`)
-                    .join('\n');
-                break;
-                
-            case 'checkbox':
-                 // Prefixes each line with an empty checkbox
-                formattedText = selectedText.split('\n')
-                    .map(line => line.trim() === '' ? line : `[ ] ${line}`)
-                    .join('\n');
-                break;
-
-            case 'divider':
-                // Inserts a divider line.
-                const prevChar = fullText.substring(start - 1, start);
-                const prefix = (start === 0 || prevChar === '\n' || prevChar === '') ? '' : '\n\n';
-                const content = prefix + '--------------------' + '\n';
-                // Instead of setRangeText, we now modify the ytext object directly
-                ytext.insert(start, content);
-                editorTextarea.focus();
-                // We manually set the cursor position after the insert
-                editorTextarea.setSelectionRange(start + content.length, start + content.length);
-                return; 
+            if (type === 'h1' && currentLine.startsWith('| ') && currentLine.endsWith(' |')) {
+                const prevLineStart = fullText.lastIndexOf('\n', currentLineStart - 2) + 1;
+                const prevLine = fullText.substring(prevLineStart, currentLineStart - 1);
+                if (prevLine.match(/^\+[-]+\+$/)) {
+                    const nextLineStart = currentLineEnd + 1;
+                    const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
+                    const nextLine = fullText.substring(nextLineStart, nextLineEnd);
+                    if (nextLine.match(/^\+[-]+\+$/)) {
+                        start = prevLineStart;
+                        end = nextLineEnd;
+                    }
+                }
+            } else if (type === 'h2') {
+                 const nextLineStart = currentLineEnd + 1;
+                 const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
+                 const nextLine = fullText.substring(nextLineStart, nextLineEnd);
+                 if (nextLine.match(/^[=]+$/)) {
+                     end = nextLineEnd;
+                 }
+            }
         }
         
-        // For text replacements, we delete the old text and insert the new formatted text
-        ytext.delete(start, end - start);
-        ytext.insert(start, formattedText);
-        editorTextarea.focus();
-        // Select the newly formatted text
-        editorTextarea.setSelectionRange(start, start + formattedText.length);
+        return { start, end, text: fullText.substring(start, end) };
     }
 
-    // Attach event listeners to the formatting buttons
-    formatButtons.h1.addEventListener('click', () => applyFormat('h1'));
-    formatButtons.h2.addEventListener('click', () => applyFormat('h2'));
-    formatButtons.bullet.addEventListener('click', () => applyFormat('bullet'));
-    formatButtons.checkbox.addEventListener('click', () => applyFormat('checkbox'));
-    formatButtons.divider.addEventListener('click', () => applyFormat('divider'));
+    function toggleFormat(type) {
+        const selection = getExtendedSelection(type);
+        
+        const formats = {
+            h1: {
+                regex: /^\+[-]+\+\n((?:\| (?:.*?) \|\n)*)\+[-]+\+$/,
+                apply: text => {
+                    const lines = text.split('\n');
+                    const maxLength = Math.max(...lines.map(line => line.length));
+                    const border = '-'.repeat(maxLength + 2);
+                    let result = `+${border}+\n`;
+                    lines.forEach(line => {
+                        if (line.trim() === '' && lines.length === 1) return; // Don't format empty single lines
+                        result += `| ${line.padEnd(maxLength, ' ')} |\n`;
+                    });
+                    result += `+${border}+`;
+                    return result;
+                },
+                revert: (text, match) => match[1].split('\n').map(line => line.substring(2, line.lastIndexOf(' |'))).join('\n').trim()
+            },
+            h2: {
+                regex: /^(.*)\n([=]+)$/,
+                apply: text => {
+                    if (text.trim() === '') return text;
+                    const lines = text.split('\n');
+                    // Handle case where selection ends in a newline, creating an empty string in the array
+                    if (lines[lines.length - 1] === '') lines.pop();
+                    return lines.map(line => `${line}\n${'='.repeat(line.length)}`).join('\n');
+                },
+                revert: (text, match) => (match[1].trim().length === match[2].trim().length) ? match[1] : text
+            },
+            bullet: {
+                regex: /^\|-> (.*)/,
+                apply: text => text.split('\n').map(line => line.trim() === '' ? line : `|-> ${line}`).join('\n'),
+                revert: text => text.split('\n').map(line => line.startsWith('|-> ') ? line.substring(4) : line).join('\n')
+            },
+            checkbox: {
+                regex: /^\[ \] (.*)/,
+                apply: text => text.split('\n').map(line => line.trim() === '' ? line : `[ ] ${line}`).join('\n'),
+                revert: text => text.split('\n').map(line => line.startsWith('[ ] ') ? line.substring(4) : line).join('\n')
+            }
+        };
+
+        if (type === 'divider') {
+            const fullText = editorTextarea.value;
+            const prefix = (selection.start === 0 || fullText.substring(selection.start - 1, selection.start) === '\n') ? '' : '\n\n';
+            const content = prefix + '--------------------' + '\n';
+            editorTextarea.setRangeText(content, selection.start, selection.start, 'end');
+            editorTextarea.focus();
+            return;
+        }
+
+        const format = formats[type];
+        const match = selection.text.match(format.regex);
+        
+        let newText;
+        let isFormatted = match !== null;
+
+        if (isFormatted && type === 'h2') {
+             isFormatted = match[1].trim().length === match[2].trim().length;
+        }
+        
+        if (!isFormatted && (type === 'bullet' || type === 'checkbox')) {
+            const lines = selection.text.split('\n');
+            if (lines[lines.length-1].trim() === '') lines.pop();
+            const allLinesFormatted = lines.every(l => l.trim() === '' || format.regex.test(l));
+            if (allLinesFormatted && selection.text.trim() !== '') {
+                isFormatted = true;
+            }
+        }
+
+        if (isFormatted) {
+            newText = format.revert(selection.text, match);
+        } else {
+            newText = format.apply(selection.text);
+        }
+        
+        editorTextarea.setRangeText(newText, selection.start, selection.end, 'select');
+        editorTextarea.focus();
+    }
+
+    // Attach event listeners
+    formatButtons.h1.addEventListener('click', () => toggleFormat('h1'));
+    formatButtons.h2.addEventListener('click', () => toggleFormat('h2'));
+    formatButtons.bullet.addEventListener('click', () => toggleFormat('bullet'));
+    formatButtons.checkbox.addEventListener('click', () => toggleFormat('checkbox'));
+    formatButtons.divider.addEventListener('click', () => toggleFormat('divider'));
 });
 

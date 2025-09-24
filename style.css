@@ -21,7 +21,7 @@
     --accent-color: #FF4D3A;
 
     /* Font Families */
-    --font-primary: 'Inter', sans-serif;
+    --font-primary: 'Tabular', monospace;
     --font-editor: 'Tabular', monospace;
 }
 
