@@ -19,7 +19,8 @@
     "author": "",
     "license": "MIT",
     "devDependencies": {
-        "vite": "^7.1.6"
+        "vite": "^7.1.6",
+        "vite-plugin-pwa": "^1.0.3"
     },
     "dependencies": {
         "y-indexeddb": "^9.0.12",

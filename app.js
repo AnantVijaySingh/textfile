@@ -59,17 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Service Worker Registration ---
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(registration => {
-                    console.log('Service Worker registered successfully:', registration);
-                })
-                .catch(error => {
-                    console.log('Service Worker registration failed:', error);
-                });
-        });
-    }
+    // DELETED: The vite-plugin-pwa now handles this automatically.
 
     // --- UI Logic ---
     themeToggleButton.addEventListener('click', () => {
@@ -259,4 +249,5 @@ document.addEventListener('DOMContentLoaded', () => {
     formatButtons.checkbox.addEventListener('click', () => toggleFormat('checkbox'));
     formatButtons.divider.addEventListener('click', () => toggleFormat('divider'));
 });
+
 
