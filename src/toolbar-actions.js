@@ -1,6 +1,8 @@
 /**
  * Gets the text selection and intelligently expands it based on the format type.
- * @param {HTMLTextAreaElement} editorTextarea - The main text editor.
+ * For block formats, it expands to full lines.
+ * For H1/H2, it checks surrounding lines to correctly identify blocks for toggling off.
+ * @param {HTMLTextAreaElement} editorTextarea - The main text editor element.
  * @param {string} type - The format type ('h1', 'h2', etc.)
  * @returns {{start: number, end: number, text: string}}
  */
@@ -13,15 +15,19 @@ function getExtendedSelection(editorTextarea, type) {
     // For block formats, always expand to full lines.
     if (['h1', 'h2', 'bullet', 'checkbox'].includes(type)) {
         start = fullText.lastIndexOf('\n', start - 1) + 1;
+        
         if (end > 0 && fullText[end - 1] === '\n') {
-            end = end;
+             end = end;
         } else {
             const endOfLastSelectedLine = fullText.indexOf('\n', end);
-            end = endOfLastSelectedLine !== -1 ? endOfLastSelectedLine : fullText.length;
+            if (endOfLastSelectedLine !== -1) {
+                end = endOfLastSelectedLine;
+            } else {
+                end = fullText.length;
+            }
         }
     }
 
-    // If it's just a cursor, check if we're inside a format block to expand the selection for toggling.
     if (isCursor) {
         const currentLineStart = fullText.lastIndexOf('\n', start - 1) + 1;
         const currentLineEnd = fullText.indexOf('\n', start) !== -1 ? fullText.indexOf('\n', start) : fullText.length;
@@ -31,35 +37,39 @@ function getExtendedSelection(editorTextarea, type) {
             const prevLineStart = fullText.lastIndexOf('\n', currentLineStart - 2) + 1;
             const prevLine = fullText.substring(prevLineStart, currentLineStart - 1);
             if (prevLine.match(/^\+[-]+\+$/)) {
-                const nextLineStart = currentLineEnd + 1;
-                const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
-                const nextLine = fullText.substring(nextLineStart, nextLineEnd);
-                if (nextLine.match(/^\+[-]+\+$/)) {
-                    start = prevLineStart;
-                    end = nextLineEnd;
+                let blockEnd = currentLineEnd;
+                let nextLineStart = currentLineEnd + 1;
+                while(nextLineStart < fullText.length) {
+                    const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
+                    const nextLine = fullText.substring(nextLineStart, nextLineEnd);
+                    if (nextLine.match(/^\+[-]+\+$/)) {
+                        blockEnd = nextLineEnd;
+                        break;
+                    }
+                    if (!nextLine.startsWith('| ') || !nextLine.endsWith(' |')) {
+                        break;
+                    }
+                    nextLineStart = nextLineEnd + 1;
                 }
+                start = prevLineStart;
+                end = blockEnd;
             }
         } else if (type === 'h2') {
-            const nextLineStart = currentLineEnd + 1;
-            const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
-            const nextLine = fullText.substring(nextLineStart, nextLineEnd);
-            if (nextLine.match(/^[=]+$/)) {
-                end = nextLineEnd;
-            }
+             const nextLineStart = currentLineEnd + 1;
+             const nextLineEnd = fullText.indexOf('\n', nextLineStart) !== -1 ? fullText.indexOf('\n', nextLineStart) : fullText.length;
+             const nextLine = fullText.substring(nextLineStart, nextLineEnd);
+             if (nextLine.match(/^[=]+$/)) {
+                 end = nextLineEnd;
+             }
         }
     }
-
+    
     return { start, end, text: fullText.substring(start, end) };
 }
 
-/**
- * Applies or removes ASCII formatting from the selected text in the textarea.
- * @param {HTMLTextAreaElement} editorTextarea - The main text editor.
- * @param {string} type - The format to toggle ('h1', 'h2', etc.).
- */
 function toggleFormat(editorTextarea, type) {
     const selection = getExtendedSelection(editorTextarea, type);
-
+    
     const formats = {
         h1: {
             regex: /^\+[-]+\+\n((?:\| (?:.*?) \|\n)*)\+[-]+\+$/,
@@ -110,37 +120,51 @@ function toggleFormat(editorTextarea, type) {
 
     const format = formats[type];
     const match = selection.text.match(format.regex);
+    
     let newText;
     let isFormatted = match !== null;
 
     if (isFormatted && type === 'h2') {
-        isFormatted = match[1].trim().length === match[2].trim().length;
+         isFormatted = match[1].trim().length === match[2].trim().length;
     }
     
     if (!isFormatted && (type === 'bullet' || type === 'checkbox')) {
         const lines = selection.text.split('\n');
-        if (lines[lines.length - 1].trim() === '') lines.pop();
+        if (lines[lines.length-1].trim() === '') lines.pop();
         const allLinesFormatted = lines.every(l => l.trim() === '' || format.regex.test(l));
         if (allLinesFormatted && selection.text.trim() !== '') {
             isFormatted = true;
         }
     }
 
-    newText = isFormatted ? format.revert(selection.text, match) : format.apply(selection.text);
+    if (isFormatted) {
+        newText = format.revert(selection.text, match);
+    } else {
+        newText = format.apply(selection.text);
+    }
     
     editorTextarea.setRangeText(newText, selection.start, selection.end, 'select');
     editorTextarea.focus();
 }
 
 /**
- * Attaches event listeners to the toolbar formatting buttons.
- * @param {object} formatButtons - An object containing the button elements.
- * @param {HTMLTextAreaElement} editorTextarea - The main text editor.
+ * Initializes the toolbar by attaching event listeners to the formatting buttons.
+ * @param {HTMLTextAreaElement} editorTextarea - The main text editor element.
  */
-export function initializeToolbar(formatButtons, editorTextarea) {
+export function initToolbar(editorTextarea) {
+    const formatButtons = {
+        h1: document.querySelector('button[title="Title"]'),
+        h2: document.querySelector('button[title="Bold"]'),
+        bullet: document.querySelector('button[title="Bullet List"]'),
+        checkbox: document.querySelector('button[title="Checkbox List"]'),
+        divider: document.querySelector('button[title="Divider"]')
+    };
+
+    // Attach event listeners
     formatButtons.h1.addEventListener('click', () => toggleFormat(editorTextarea, 'h1'));
     formatButtons.h2.addEventListener('click', () => toggleFormat(editorTextarea, 'h2'));
     formatButtons.bullet.addEventListener('click', () => toggleFormat(editorTextarea, 'bullet'));
     formatButtons.checkbox.addEventListener('click', () => toggleFormat(editorTextarea, 'checkbox'));
     formatButtons.divider.addEventListener('click', () => toggleFormat(editorTextarea, 'divider'));
 }
+

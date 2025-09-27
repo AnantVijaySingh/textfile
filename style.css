@@ -23,8 +23,8 @@
     --accent-color: #FF4D3A;
 
     /* Font Families */
-    --font-primary: 'Tabular', sans-serif;
-    --font-editor: 'Tabular', monospace;
+    --font-primary: 'Space Mono', monospace;
+    --font-editor: 'Space Mono', monospace;
 }
 
 /* Apply light theme by default */
@@ -80,15 +80,9 @@ html[data-theme="dark"] .file-name-input {
   ==============================================
 */
 @font-face {
-    font-family: 'Tabular';
-    src: url('/fonts/Tabular-Medium.woff') format('woff');
-    font-weight: 500;
-    font-style: normal;
-}
-@font-face {
-    font-family: 'Tabular';
-    src: url('/fonts/Tabular-Semibold.woff') format('woff');
-    font-weight: 600;
+    font-family: 'Space Mono';
+    src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
+    font-weight: normal;
     font-style: normal;
 }
 
@@ -97,8 +91,8 @@ html[data-theme="dark"] .file-name-input {
   ==============================================
 */
 .app-container {
-    width: 100%;
-    max-width: 1100px;
+    width: 80%;
+    max-width: 1300px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -111,7 +105,7 @@ html[data-theme="dark"] .file-name-input {
     padding: 0 16px;
     height: 56px;
     background-color: var(--toolbar-background-light);
-    border: 1px solid var(--secondary-shapes-light);
+    border: none;
     border-radius: 8px;
     flex-shrink: 0;
     margin-bottom: 16px;
@@ -257,8 +251,7 @@ html[data-theme="dark"] #theme-toggle .light-icon {
     justify-content: center;
 }
 .editor-textarea {
-    width: 100%;
-    max-width: 800px;
+    width: 90%;
     height: 100%;
     border: none;
     outline: none;

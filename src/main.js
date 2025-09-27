@@ -1,37 +1,42 @@
 import { setupYjs } from './yjs-setup.js';
-import { initializeToolbar } from './toolbar-actions.js';
+import { initToolbar } from './toolbar-actions.js';
 
-// Wait for the DOM to be fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
-
     // --- DOM Element Selection ---
+    const editorTextarea = document.getElementById('editor');
+    const fileNameInput = document.getElementById('file-name-input'); // Get the filename input
     const themeToggleButton = document.getElementById('theme-toggle');
     const minimizeToggleButton = document.getElementById('minimize-toggle');
     const toolbar = document.getElementById('toolbar');
-    const editorTextarea = document.getElementById('editor');
-    const fileNameInput = document.getElementById('file-name-input');
     const syncStatus = document.getElementById('sync-status');
+
+    // --- Y.js Setup ---
+    // Pass both the editor and the filename input to the setup function
+    const { ydoc, persistence } = setupYjs(editorTextarea, fileNameInput);
     
-    const formatButtons = {
-        h1: document.querySelector('button[title="Title"]'),
-        h2: document.querySelector('button[title="Bold"]'),
-        bullet: document.querySelector('button[title="Bullet List"]'),
-        checkbox: document.querySelector('button[title="Checkbox List"]'),
-        divider: document.querySelector('button[title="Divider"]')
-    };
+    // --- Toolbar Setup ---
+    initToolbar(editorTextarea);
 
-    // --- Initialize Modules ---
-    
-    // Set up the Y.js document, persistence, and data bindings
-    const { ydoc, ytext, ytitle } = setupYjs(editorTextarea, fileNameInput, syncStatus);
+    // --- Save Status UI ---
+    let saveTimer = null;
+    const SAVE_DELAY = 1000;
 
-    // Attach event listeners to the formatting toolbar
-    initializeToolbar(formatButtons, editorTextarea);
+    persistence.on('synced', () => {
+        syncStatus.textContent = 'Saved';
+        if (saveTimer) clearTimeout(saveTimer);
+    });
 
+    ydoc.on('update', (update, origin) => {
+        if (origin !== persistence) {
+            syncStatus.textContent = 'Saving...';
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                syncStatus.textContent = 'Saved';
+            }, SAVE_DELAY);
+        }
+    });
 
-    // --- General UI Logic ---
-
-    // Theme Toggling
+    // --- Other UI Initializations ---
     themeToggleButton.addEventListener('click', () => {
         const root = document.documentElement;
         const currentTheme = root.getAttribute('data-theme');
@@ -39,9 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
         root.setAttribute('data-theme', newTheme);
     });
 
-    // Toolbar Minimization
     minimizeToggleButton.addEventListener('click', () => {
         toolbar.classList.toggle('minimized');
     });
-
 });
+

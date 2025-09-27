@@ -21,7 +21,7 @@ export default defineConfig({
       workbox: {
         // This tells the service worker to cache all the static assets
         // in your final 'dist' folder.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,ttf}'],
       },
 
       // This section configures the web app manifest.
