@@ -54,34 +54,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const cursorPosition = editorTextarea.selectionStart;
             const text = editorTextarea.value;
             
-            // Find the start of the current line
             const lineStart = text.lastIndexOf('\n', cursorPosition - 1) + 1;
             const currentLine = text.substring(lineStart, cursorPosition);
-            
+
+            // --- Case 1: Unordered Lists (|-> ) ---
             const bulletPrefix = '|-> ';
-            const checkboxPrefix = '[ ] ';
-            const checkedCheckboxRegex = /^\[[xX]\] /; // Matches [x] or [X]
-
-            let prefixToCarry = '';
-
             if (currentLine.startsWith(bulletPrefix)) {
-                prefixToCarry = bulletPrefix;
-            } else if (currentLine.startsWith(checkboxPrefix) || checkedCheckboxRegex.test(currentLine)) {
-                prefixToCarry = checkboxPrefix; // Always carry over an unchecked box
+                event.preventDefault();
+                if (currentLine.trim() === bulletPrefix.trim()) {
+                    editorTextarea.setRangeText('\n', lineStart, cursorPosition, 'end'); // Break out
+                } else {
+                    editorTextarea.setRangeText(`\n${bulletPrefix}`, cursorPosition, cursorPosition, 'end'); // Continue
+                }
+                return; 
+            }
+
+            // --- Case 2: Checkbox Lists ([ ], [x]) ---
+            const checkboxPrefix = '[ ] ';
+            const checkedCheckboxRegex = /^\[[xX]\] /;
+            if (currentLine.startsWith(checkboxPrefix) || checkedCheckboxRegex.test(currentLine)) {
+                event.preventDefault();
+                if (currentLine.trim() === checkboxPrefix.trim() || checkedCheckboxRegex.test(currentLine.trim() + ' ')) {
+                    editorTextarea.setRangeText('\n', lineStart, cursorPosition, 'end'); // Break out
+                } else {
+                    editorTextarea.setRangeText(`\n${checkboxPrefix}`, cursorPosition, cursorPosition, 'end'); // Continue
+                }
+                return;
             }
             
-            if (prefixToCarry) {
-                // If the current line is just the prefix, remove it and insert a newline (break out of list)
-                if (currentLine.trim() === prefixToCarry.trim() || (prefixToCarry === checkboxPrefix && checkedCheckboxRegex.test(currentLine.trim() + ' '))) {
-                    event.preventDefault();
-                    // Replace the current line's prefix with a newline
-                    editorTextarea.setRangeText('\n', lineStart, cursorPosition, 'end');
+            // --- Case 3: Ordered Lists (1., 2.) ---
+            const orderedListRegex = /^(\d+)\.\s/;
+            const orderedMatch = currentLine.match(orderedListRegex);
+            if (orderedMatch) {
+                event.preventDefault();
+                if (currentLine.trim() === orderedMatch[0].trim()) {
+                    editorTextarea.setRangeText('\n', lineStart, cursorPosition, 'end'); // Break out
                 } else {
-                    // Otherwise, continue the list
-                    event.preventDefault();
-                    const textToInsert = `\n${prefixToCarry}`;
-                    editorTextarea.setRangeText(textToInsert, cursorPosition, cursorPosition, 'end');
+                    const currentNumber = parseInt(orderedMatch[1], 10);
+                    const nextPrefix = `${currentNumber + 1}. `;
+                    editorTextarea.setRangeText(`\n${nextPrefix}`, cursorPosition, cursorPosition, 'end'); // Continue
                 }
+                return;
             }
         }
     });
