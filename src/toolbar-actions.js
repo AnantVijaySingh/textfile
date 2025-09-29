@@ -118,6 +118,15 @@ function toggleFormat(editorTextarea, type) {
         return;
     }
 
+    // FIX: Handle applying bullet/checkbox to an empty line where no text is selected.
+    if ((type === 'bullet' || type === 'checkbox') && selection.text === '') {
+        const prefix = type === 'bullet' ? '|-> ' : '[ ] ';
+        // Insert the prefix and place the cursor after it.
+        editorTextarea.setRangeText(prefix, selection.start, selection.end, 'end');
+        editorTextarea.focus();
+        return; // Exit the function early to prevent further processing.
+    }
+
     const format = formats[type];
     const match = selection.text.match(format.regex);
     
@@ -167,4 +176,3 @@ export function initToolbar(editorTextarea) {
     formatButtons.checkbox.addEventListener('click', () => toggleFormat(editorTextarea, 'checkbox'));
     formatButtons.divider.addEventListener('click', () => toggleFormat(editorTextarea, 'divider'));
 }
-

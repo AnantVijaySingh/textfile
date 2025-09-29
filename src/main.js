@@ -48,6 +48,45 @@ document.addEventListener('DOMContentLoaded', () => {
         toolbar.classList.toggle('minimized');
     });
 
+    // --- START: Auto-continue list formatting on Enter key ---
+    editorTextarea.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            const cursorPosition = editorTextarea.selectionStart;
+            const text = editorTextarea.value;
+            
+            // Find the start of the current line
+            const lineStart = text.lastIndexOf('\n', cursorPosition - 1) + 1;
+            const currentLine = text.substring(lineStart, cursorPosition);
+            
+            const bulletPrefix = '|-> ';
+            const checkboxPrefix = '[ ] ';
+            const checkedCheckboxRegex = /^\[[xX]\] /; // Matches [x] or [X]
+
+            let prefixToCarry = '';
+
+            if (currentLine.startsWith(bulletPrefix)) {
+                prefixToCarry = bulletPrefix;
+            } else if (currentLine.startsWith(checkboxPrefix) || checkedCheckboxRegex.test(currentLine)) {
+                prefixToCarry = checkboxPrefix; // Always carry over an unchecked box
+            }
+            
+            if (prefixToCarry) {
+                // If the current line is just the prefix, remove it and insert a newline (break out of list)
+                if (currentLine.trim() === prefixToCarry.trim() || (prefixToCarry === checkboxPrefix && checkedCheckboxRegex.test(currentLine.trim() + ' '))) {
+                    event.preventDefault();
+                    // Replace the current line's prefix with a newline
+                    editorTextarea.setRangeText('\n', lineStart, cursorPosition, 'end');
+                } else {
+                    // Otherwise, continue the list
+                    event.preventDefault();
+                    const textToInsert = `\n${prefixToCarry}`;
+                    editorTextarea.setRangeText(textToInsert, cursorPosition, cursorPosition, 'end');
+                }
+            }
+        }
+    });
+    // --- END: Auto-continue list formatting ---
+
     // --- START: Modal and Link Logic ---
 
     // 1. Select the new buttons and modal elements
