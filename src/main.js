@@ -4,37 +4,39 @@ import { initToolbar } from './toolbar-actions.js';
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Element Selection ---
     const editorTextarea = document.getElementById('editor');
-    const fileNameInput = document.getElementById('file-name-input'); // Get the filename input
+    const fileNameInput = document.getElementById('file-name-input');
     const themeToggleButton = document.getElementById('theme-toggle');
     const minimizeToggleButton = document.getElementById('minimize-toggle');
     const toolbar = document.getElementById('toolbar');
     const syncStatus = document.getElementById('sync-status');
+    const syncButton = document.querySelector('button[title="Sync Devices"]'); // New element selected
 
     // --- Y.js Setup ---
-    // Pass both the editor and the filename input to the setup function
-    const { ydoc, persistence } = setupYjs(editorTextarea, fileNameInput);
+    // The provider is now returned from the setup function
+    const { ydoc, persistence, provider } = setupYjs(editorTextarea, fileNameInput);
     
     // --- Toolbar Setup ---
     initToolbar(editorTextarea);
 
-    // --- Save Status UI ---
-    let saveTimer = null;
-    const SAVE_DELAY = 1000;
-
-    persistence.on('synced', () => {
-        syncStatus.textContent = 'Saved';
-        if (saveTimer) clearTimeout(saveTimer);
-    });
-
-    ydoc.on('update', (update, origin) => {
-        if (origin !== persistence) {
-            syncStatus.textContent = 'Saving...';
-            if (saveTimer) clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => {
-                syncStatus.textContent = 'Saved';
-            }, SAVE_DELAY);
+    // --- START: Update Sync Status UI ---
+    // This entire section replaces the old "Save Status UI"
+    const updateSyncStatus = () => {
+        if (provider.synced) {
+            const peerCount = provider.awareness.getStates().size;
+            syncStatus.textContent = `${peerCount} ${peerCount === 1 ? 'peer' : 'peers'}`;
+        } else {
+            syncStatus.textContent = 'connecting...';
         }
-    });
+    };
+    
+    // Listen for connection status changes
+    provider.on('status', updateSyncStatus);
+    // Listen for when other users (peers) join or leave
+    provider.awareness.on('update', updateSyncStatus);
+
+    // The old save timer logic is no longer needed, as sync is now real-time.
+    // --- END: Update Sync Status UI ---
+
 
     // --- Other UI Initializations ---
     themeToggleButton.addEventListener('click', () => {
@@ -48,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
         toolbar.classList.toggle('minimized');
     });
 
-    // --- START: Auto-continue list formatting on Enter key ---
     editorTextarea.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             const cursorPosition = editorTextarea.selectionStart;
@@ -98,11 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-    // --- END: Auto-continue list formatting ---
 
-    // --- START: Modal and Link Logic ---
+    // --- START: Modal and Link Logic (with Sync Button update) ---
 
-    // 1. Select the new buttons and modal elements
+    // 1. Select the buttons and modal elements
     const githubButton = document.querySelector('button[title="GitHub Repository"]');
     const devButton = document.querySelector('button[title="Developer"]');
     const helpButton = document.querySelector('button[title="Help"]');
@@ -122,6 +122,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 3. Add event listeners to the buttons
+    syncButton.addEventListener('click', () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            const originalText = syncStatus.textContent;
+            syncStatus.textContent = 'Copied!';
+            setTimeout(() => {
+                updateSyncStatus(); // Restore the peer count status
+            }, 1500);
+        }).catch(err => {
+            console.error('Failed to copy URL: ', err);
+            // We can't use alert, so we'll show a modal for the error
+            showModal('Error: Could not copy URL to clipboard.');
+        });
+    });
+
     githubButton.addEventListener('click', () => {
         window.open('https://github.com/AnantVijaySingh/textfile', '_blank');
     });
@@ -139,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const textToSave = editorTextarea.value;
         const fileName = fileNameInput.value || 'Untitled.txt';
         
-        // Ensure the filename ends with .txt
         const finalFileName = fileName.endsWith('.txt') ? fileName : `${fileName}.txt`;
 
         const blob = new Blob([textToSave], { type: 'text/plain' });
@@ -159,7 +173,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Add listeners to close the modal
     modalCloseButton.addEventListener('click', hideModal);
     modalOverlay.addEventListener('click', (event) => {
-        // Only close if the click is on the overlay itself, not the content
         if (event.target === modalOverlay) {
             hideModal();
         }
