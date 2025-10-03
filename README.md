@@ -9,3 +9,5 @@ npm start
 npm run build
 
 npm run preview
+
+wrangler pages deploy dist --project-name=textfile
