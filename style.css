@@ -203,6 +203,22 @@ html[data-theme="dark"] .separator {
     background-color: var(--secondary-shapes-dark);
 }
 
+#sync-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;  /* Space between icons */
+}
+
+.status-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--secondary-text-light);  /* Matches your theme */
+}
+
+html[data-theme="dark"] .status-icon {
+    color: var(--secondary-text-dark);
+}
+
 /* ==============================================
   ICON TOGGLING & MINIMIZE LOGIC
   ==============================================

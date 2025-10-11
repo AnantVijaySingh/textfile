@@ -18,23 +18,89 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Toolbar Setup ---
     initToolbar(editorTextarea);
 
-    // --- START: Update Sync Status UI ---
-    // This entire section replaces the old "Save Status UI"
+    // --- START: Update Sync Status UI with Icons ---
+    // Track states
+    let localSaved = false;  // False = saving, true = saved
+    let isSyncing = false;   // False = not syncing, true = syncing
+    let errorMessage = '';   // Empty = no error
+
+    // Function to update the status icons
     const updateSyncStatus = () => {
-        if (provider.synced) {
-            const peerCount = provider.awareness.getStates().size;
-            syncStatus.textContent = `${peerCount} ${peerCount === 1 ? 'peer' : 'peers'}`;
+        if (errorMessage) {
+            syncStatus.innerHTML = '<svg class="status-icon"><use xlink:href="#icon-error"></use></svg>';
+            syncStatus.title = errorMessage;  // Hover to show error
         } else {
-            syncStatus.textContent = 'connecting...';
+            const localIcon = localSaved 
+                ? '<svg class="status-icon"><use xlink:href="#icon-saved"></use></svg>' 
+                : '<svg class="status-icon"><use xlink:href="#icon-saving"></use></svg>';
+            const syncIcon = isSyncing 
+                ? '<svg class="status-icon"><use xlink:href="#icon-syncing"></use></svg>' 
+                : '<svg class="status-icon"><use xlink:href="#icon-not-syncing"></use></svg>';
+            syncStatus.innerHTML = `${localIcon} ${syncIcon}`;  // Show pair of icons
+            syncStatus.title = isSyncing ? `Synced with ${provider.awareness.getStates().size} peer(s)` : '';  // Hover info for syncing
         }
     };
-    
-    // Listen for connection status changes
-    provider.on('status', updateSyncStatus);
-    // Listen for when other users (peers) join or leave
+
+    // Listen for local persistence (saving/saved on load)
+    persistence.on('synced', () => {
+        localSaved = true;
+        updateSyncStatus();
+    });
+
+    // Detect ongoing saves on document changes (e.g., typing)
+    let saveTimeout;  // For debouncing
+    ydoc.on('update', () => {
+        localSaved = false;  // Show saving on change
+        updateSyncStatus();
+        
+        // Debounce: Wait 1 second after last change to show saved
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            localSaved = true;  // Assume saved after delay (IndexedDB is fast)
+            updateSyncStatus();
+        }, 1000);  // Adjust delay if needed
+    });
+
+    // Listen for sync readiness
+    provider.on('synced', () => {
+        isSyncing = provider.synced;
+        updateSyncStatus();
+    });
+
+    // Listen for peer changes (updates syncing state)
+    provider.on('peers', () => {
+        isSyncing = provider.synced;  // Re-check if still synced
+        updateSyncStatus();
+    });
+
+    // Listen for awareness updates (e.g., user presence)
     provider.awareness.on('update', updateSyncStatus);
 
-    // The old save timer logic is no longer needed, as sync is now real-time.
+    // Handle errors from provider or persistence
+    provider.on('error', (err) => {
+        errorMessage = err.message || 'Sync error occurred';
+        console.error('Sync error:', err);  // Log for debugging
+        updateSyncStatus();
+    });
+    persistence.on('error', (err) => {
+        errorMessage = err.message || 'Local save error occurred';
+        console.error('Local save error:', err);  // Log for debugging
+        updateSyncStatus();
+    });
+
+    // Call once to set initial icons (starts as saving + not syncing)
+    updateSyncStatus();
+
+    // Backup poll: Check every 1 second if states changed (stops after success)
+    const statusPoll = setInterval(() => {
+        if (localSaved && isSyncing) {
+            clearInterval(statusPoll);  // Stop once done
+        } else {
+            localSaved = persistence.synced || localSaved;  // Check persistence
+            isSyncing = provider.synced || isSyncing;  // Check provider
+            updateSyncStatus();
+        }
+    }, 1000);
     // --- END: Update Sync Status UI ---
 
 
@@ -179,5 +245,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // --- END: Modal and Link Logic ---
-});
 
+    // Clean up WebSocket on page unload to avoid Firefox warnings
+    window.addEventListener('beforeunload', () => {
+        provider.destroy();  // Closes y-webrtc connections safely
+    });
+});
