@@ -44,7 +44,48 @@ export function setupYjs(editorTextarea) {
         document.title = `${newName} - textfile.me`;
     });
 
+    // --- 4. Registry for Previous Docs ---
+    const updateRegistry = () => {
+        let registry = [];
+        try {
+            registry = JSON.parse(localStorage.getItem('textfile_docs') || '[]');
+        } catch (e) {
+            registry = [];
+        }
+
+        const textContent = ytext.toString();
+        let excerpt = textContent.slice(0, 100).replace(/\n/g, ' ');
+        if (!excerpt.trim()) {
+            excerpt = "Empty Document";
+        }
+
+        // Remove existing entry for this room if it exists
+        registry = registry.filter(doc => doc.id !== roomName);
+
+        // Add to the top
+        registry.unshift({
+            id: roomName,
+            excerpt: excerpt,
+            lastAccessed: Date.now()
+        });
+
+        // Keep only top 20
+        if (registry.length > 20) {
+            registry = registry.slice(0, 20);
+        }
+
+        localStorage.setItem('textfile_docs', JSON.stringify(registry));
+    };
+
+    let debounceTimer;
+    ytext.observe(() => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(updateRegistry, 1000);
+    });
+
     persistence.on('synced', () => {
+        updateRegistry(); // Update registry on load
+
         console.log('[DEBUG] IndexedDB persistence synced.');
         if (y_filename.length === 0) {
             // Use the room name (without prefix) as the default title.
