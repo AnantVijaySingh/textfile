@@ -1,84 +1,30 @@
-/* ==============================================
-  BASIC SETUP & CUSTOM PROPERTIES (VARIABLES)
-  ==============================================
-*/
 :root {
-    /* Color Palette - Light Mode */
-    --background-color-light: #FAFCFE;
-    --toolbar-background-light: #F8F8F8;
-    --secondary-text-light: #6B6B6B;
-    --secondary-buttons-light: #A1A1A1;
-    --secondary-shapes-light: #EAEAEA;
-    --primary-text-light: #070707;
-
-    /* Color Palette - Dark Mode */
-    --background-color-dark: #1E1E1E;
-    --toolbar-background-dark: #2A2A2A;
-    --secondary-text-dark: #6B6B6B;
-    --secondary-buttons-dark: #A1A1A1;
-    --secondary-shapes-dark: #3A3A3A;
-    --primary-text-dark: #CCCCCC;
+    --background-color: #FFFFFF;
+    --editor-bg: #FAFCFE;
+    --text-color: #000000;
+    --placeholder-color: #717374;
+    --menu-bg: #FAF5FF; /* Pale purple/pink */
+    --menu-border: #E9D5FF;
+    --menu-text: #7E22CE; /* Deep purple */
+    --menu-hover-bg: #7E22CE;
+    --menu-hover-text: #FFFFFF;
     
-    /* Shared Accent Color */
-    --accent-color: #FF4D3A;
-
-    /* Font Families */
     --font-primary: 'Space Mono', monospace;
     --font-editor: 'Space Mono', monospace;
 }
 
-/* Apply light theme by default */
-html {
-    background-color: var(--background-color-light);
-    color: var(--primary-text-light);
+html[data-theme="dark"] {
+    --background-color: #000000;
+    --editor-bg: #0D0D0D;
+    --text-color: #FFFFFF;
+    --placeholder-color: #666666;
+    --menu-bg: #1A0D23;
+    --menu-border: #3A1F4D;
+    --menu-text: #C489FF;
+    --menu-hover-bg: #7E22CE;
+    --menu-hover-text: #FFFFFF;
 }
 
-body {
-    background-color: var(--background-color-light);
-    color: var(--primary-text-light);
-    font-family: var(--font-primary);
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    height: 100vh;
-    padding: 16px;
-    box-sizing: border-box;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* Apply dark theme when data-theme is 'dark' */
-html[data-theme="dark"] body {
-    background-color: var(--background-color-dark);
-    color: var(--primary-text-dark);
-}
-
-html[data-theme="dark"] .editor-textarea {
-    background-color: var(--background-color-dark);
-    color: var(--primary-text-dark);
-}
-
-html[data-theme="dark"] .top-bar {
-    background-color: var(--toolbar-background-dark);
-    border-color: var(--secondary-shapes-dark);
-}
-
-html[data-theme="dark"] .toolbar svg {
-    color: var(--secondary-text-dark);
-}
-
-html[data-theme="dark"] .toolbar button:hover svg {
-    color: var(--primary-text-dark);
-}
-
-html[data-theme="dark"] .file-name-input {
-    background-color: var(--toolbar-background-dark);
-    color: var(--primary-text-dark);
-}
-
-/* ==============================================
-  FONT DEFINITIONS
-  ==============================================
-*/
 @font-face {
     font-family: 'Space Mono';
     src: url('/fonts/SpaceMono-Regular.ttf') format('truetype');
@@ -86,269 +32,99 @@ html[data-theme="dark"] .file-name-input {
     font-style: normal;
 }
 
-/* ==============================================
-  MAIN LAYOUT & TOP BAR
-  ==============================================
-*/
+html, body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-primary);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    width: 100vw;
+    box-sizing: border-box;
+}
+
 .app-container {
-    width: 80%;
-    max-width: 1300px;
+    width: 100%;
     height: 100%;
+    padding: 24px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
 }
 
-.top-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 16px;
-    height: 56px;
-    background-color: var(--toolbar-background-light);
-    border: none;
-    border-radius: 8px;
-    flex-shrink: 0;
-    margin-bottom: 16px;
-}
-
-.top-bar-left, .top-bar-right {
-    flex: 1;
-    font-family: var(--font-editor);
-    font-size: 14px;
-    color: var(--secondary-text-light);
-}
-.top-bar-right {
-    text-align: right;
-}
-.top-bar-center {
-    flex: 3;
-    display: flex;
-    justify-content: center;
-}
-
-.file-name-input {
-    background-color: transparent;
-    border: none;
-    outline: none;
-    font-family: var(--font-editor);
-    font-size: 14px;
-    color: var(--primary-text-light);
-    padding: 4px 8px;
-    border-radius: 4px;
-    width: 100%;
-    max-width: 200px;
-    transition: background-color 0.2s ease-in-out;
-}
-
-.file-name-input:hover, .file-name-input:focus {
-    background-color: rgba(0,0,0,0.05);
-}
-
-
-/* ==============================================
-  TOOLBAR & ICONS
-  ==============================================
-*/
-.toolbar {
-    display: flex;
-    align-items: center;
-}
-
-.toolbar > div {
-    display: flex;
-    align-items: center;
-}
-
-.toolbar button {
-    background: none;
-    border: none;
-    padding: 8px;
-    margin: 0 2px;
-    cursor: pointer;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1; 
-}
-
-.toolbar button:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-
-html[data-theme="dark"] .toolbar button:hover {
-    background-color: rgba(255,255,255,0.05);
-}
-
-.toolbar svg {
-    width: 22px;
-    height: 22px;
-    color: var(--secondary-text-light);
-    transition: color 0.2s ease-in-out;
-}
-
-.toolbar button:hover svg {
-    color: var(--primary-text-light);
-}
-
-.separator {
-    width: 1px;
-    height: 20px;
-    background-color: var(--secondary-shapes-light);
-    margin: 0 12px;
-    transition: opacity 0.3s ease;
-}
-
-html[data-theme="dark"] .separator {
-    background-color: var(--secondary-shapes-dark);
-}
-
-#sync-status {
-    display: flex;
-    align-items: center;
-    gap: 4px;  /* Space between icons */
-}
-
-.status-icon {
-    width: 20px;
-    height: 20px;
-    color: var(--secondary-text-light);  /* Matches your theme */
-}
-
-html[data-theme="dark"] .status-icon {
-    color: var(--secondary-text-dark);
-}
-
-/* ==============================================
-  ICON TOGGLING & MINIMIZE LOGIC
-  ==============================================
-*/
-/* By default, show light mode and maximize icons */
-#theme-toggle .dark-icon,
-#minimize-toggle .minimize-icon {
-    display: none;
-}
-#theme-toggle .light-icon,
-#minimize-toggle .maximize-icon {
-    display: block;
-}
-
-/* When dark mode is active, swap the theme icons */
-html[data-theme="dark"] #theme-toggle .dark-icon {
-    display: block;
-}
-html[data-theme="dark"] #theme-toggle .light-icon {
-    display: none;
-}
-
-/* When toolbar is minimized, show the correct icon... */
-.toolbar.minimized #minimize-toggle .minimize-icon {
-    display: block;
-}
-.toolbar.minimized #minimize-toggle .maximize-icon {
-    display: none;
-}
-/* ...and hide the non-essential sections. */
-.toolbar.minimized .app-settings,
-.toolbar.minimized .other-links,
-.toolbar.minimized .separator {
-    display: none;
-}
-
-
-/* ==============================================
-  EDITOR TEXT AREA
-  ==============================================
-*/
 .editor-container {
     flex-grow: 1;
-    padding: 0 16px 16px 16px;
     display: flex;
-    justify-content: center;
+    height: 100%;
+    width: 100%;
 }
+
 .editor-textarea {
-    width: 90%;
+    width: 100%;
     height: 100%;
     border: none;
     outline: none;
-    background-color: transparent;
-    color: var(--primary-text-light);
+    background-color: var(--editor-bg);
+    border-radius: 16px;
+    color: var(--text-color);
+    caret-color: #7A07C4;
     font-family: var(--font-editor);
     font-size: 16px;
     line-height: 1.6;
     resize: none;
-    padding: 0;
-    caret-color: var(--accent-color);
-}
-.editor-textarea::placeholder {
-    color: var(--secondary-text-light);
-}
-html[data-theme="dark"] .editor-textarea::placeholder {
-    color: var(--secondary-text-dark);
+    padding: 32px 48px;
+    box-sizing: border-box;
 }
 
-/* ==============================================
-  MODAL STYLES
-  ==============================================
-*/
-.modal-overlay {
-    display: none; /* Hidden by default */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    justify-content: center;
-    align-items: center;
+.editor-textarea::placeholder {
+    color: var(--placeholder-color);
+}
+
+/* Context Menu */
+.context-menu {
+    display: none;
+    position: absolute;
+    background-color: var(--menu-bg);
+    border: 1px solid var(--menu-border);
+    border-radius: 16px;
+    padding: 0; /* Removed vertical padding so hover extends to edges */
+    overflow: hidden; /* Ensure hovered items respect the container's rounded corners */
+    min-width: 180px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     z-index: 1000;
 }
 
-.modal-overlay.visible {
-    display: flex; /* Show the modal */
+.context-menu.visible {
+    display: block;
 }
 
-.modal-content {
-    background-color: var(--toolbar-background-light);
-    color: var(--primary-text-light);
-    padding: 24px 32px;
-    border-radius: 8px;
-    max-width: 400px;
-    text-align: center;
-    font-size: 16px;
-    line-height: 1.6;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-}
-
-html[data-theme="dark"] .modal-content {
-    background-color: var(--toolbar-background-dark);
-    color: var(--primary-text-dark);
-}
-
-.modal-content p {
-    margin: 0 0 24px 0;
-}
-
-.modal-button {
-    background-color: var(--secondary-shapes-light);
-    color: var(--primary-text-light);
+.menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 20px;
+    background: none;
     border: none;
-    padding: 8px 24px;
-    border-radius: 6px;
     cursor: pointer;
+    color: var(--menu-text);
     font-family: var(--font-primary);
     font-size: 14px;
+    text-align: left;
+    transition: background-color 0.15s, color 0.15s;
+    gap: 16px;
 }
 
-.modal-button:hover {
-    background-color: var(--secondary-buttons-light);
+.menu-item:hover {
+    background-color: var(--menu-hover-bg);
+    color: var(--menu-hover-text);
 }
 
-html[data-theme="dark"] .modal-button {
-    background-color: var(--secondary-shapes-dark);
-    color: var(--primary-text-dark);
+.menu-item:hover svg {
+    stroke: var(--menu-hover-text);
 }
 
-html[data-theme="dark"] .modal-button:hover {
-     background-color: var(--secondary-text-dark);
+.menu-item svg {
+    stroke: var(--menu-text);
+    flex-shrink: 0;
 }

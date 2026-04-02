@@ -7,10 +7,9 @@ import { TextAreaBinding } from 'y-textarea';
  * Initializes the Y.js document, sets up database persistence and WebRTC synchronization,
  * and binds shared data types to UI elements.
  * @param {HTMLTextAreaElement} editorTextarea - The main text editor element.
- * @param {HTMLInputElement} fileNameInput - The input element for the document title.
  * @returns {{ydoc: Y.Doc, persistence: IndexeddbPersistence, provider: WebrtcProvider}}
  */
-export function setupYjs(editorTextarea, fileNameInput) {
+export function setupYjs(editorTextarea) {
     console.log('[DEBUG] Initializing Y.js setup...');
 
     // --- 1. Determine the document room name from the URL hash ---
@@ -42,30 +41,7 @@ export function setupYjs(editorTextarea, fileNameInput) {
 
     y_filename.observe((event, transaction) => {
         const newName = y_filename.toString();
-        if (fileNameInput.value !== newName) {
-            fileNameInput.value = newName;
-        }
         document.title = `${newName} - textfile.me`;
-    });
-    
-    fileNameInput.addEventListener('input', () => {
-        if (y_filename.toString() !== fileNameInput.value) {
-            ydoc.transact(() => {
-                y_filename.delete(0, y_filename.length);
-                y_filename.insert(0, fileNameInput.value);
-            }, 'user');
-        }
-    });
-
-    fileNameInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            editorTextarea.focus();
-        }
-    });
-
-    fileNameInput.addEventListener('click', () => {
-        fileNameInput.select();
     });
 
     persistence.on('synced', () => {
@@ -78,7 +54,6 @@ export function setupYjs(editorTextarea, fileNameInput) {
             y_filename.insert(0, defaultTitle);
         } else {
             const currentName = y_filename.toString();
-            fileNameInput.value = currentName;
             document.title = `${currentName} - textfile.me`;
         }
     });
@@ -86,4 +61,3 @@ export function setupYjs(editorTextarea, fileNameInput) {
     console.log('[DEBUG] Y.js setup complete.');
     return { ydoc, persistence, provider };
 }
-
