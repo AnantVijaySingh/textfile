@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "description": "An ultra-simple, browser-based text editor that prioritizes ease of use and privacy.",
     "type": "module",
-    "main": "app.js",
+    "main": "src/main.js",
     "scripts": {
         "start": "vite",
         "build": "vite build",

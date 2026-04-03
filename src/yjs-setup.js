@@ -10,8 +10,6 @@ import { TextAreaBinding } from 'y-textarea';
  * @returns {{ydoc: Y.Doc, persistence: IndexeddbPersistence, provider: WebrtcProvider}}
  */
 export function setupYjs(editorTextarea) {
-    console.log('[DEBUG] Initializing Y.js setup...');
-
     // --- 1. Determine the document room name from the URL hash ---
     let roomName = window.location.hash.slice(1);
     if (!roomName) {
@@ -20,7 +18,6 @@ export function setupYjs(editorTextarea) {
         // Update the URL so it can be shared.
         window.location.hash = roomName;
     }
-    console.log(`[DEBUG] Joining room: ${roomName}`);
     
     const ydoc = new Y.Doc();
     
@@ -92,10 +89,7 @@ export function setupYjs(editorTextarea) {
     persistence.on('synced', () => {
         updateRegistry(); // Update registry on load
         updateTitle();
-
-        console.log('[DEBUG] IndexedDB persistence synced.');
     });
     
-    console.log('[DEBUG] Y.js setup complete.');
     return { ydoc, persistence, provider };
 }
