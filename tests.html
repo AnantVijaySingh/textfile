@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>textfile.me - Test Runner</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        #test-results { 
+            position: fixed; 
+            top: 10px; 
+            left: 10px; 
+            z-index: 9999; 
+            background: #fff; 
+            color: #000; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            width: 320px; 
+            font-family: monospace; 
+            font-size: 12px; 
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+    </style>
+    <script src="/src/main.js" type="module" defer></script>
+    <script src="/src/tests.js" type="module" defer></script>
+</head>
+<body>
+    <div id="test-results">
+        <h3 style="margin-top: 0;">Test Results</h3>
+        <ul id="test-list" style="padding-left: 16px; margin: 0;"></ul>
+    </div>
+
+    <div class="app-container">
+        <main class="editor-container">
+            <textarea 
+                id="editor" 
+                class="editor-textarea" 
+                placeholder="Welcome to a Text File. A simple text editor. Your data is stored in local storage and available offline. Each file has a unique link that can be shared for ee2e collaborative editing. Because the data is local only, to collborate, all users must be online together. Right click for more options. Made with Love by Anant with help from Gemini, Calude and Lumo ♥."></textarea>
+        </main>
+    </div>
+
+    <!-- Custom Context Menu -->
+    <div id="custom-context-menu" class="context-menu">
+        <button id="menu-new" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+            <span>new</span>
+            <span class="shortcut">⌘⌥N</span>
+        </button>
+        <button id="menu-copy" class="menu-item active">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>copy text</span>
+            <span class="shortcut">⌘⇧C</span>
+        </button>
+        <button id="menu-download" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>download</span>
+            <span class="shortcut">⌘S</span>
+        </button>
+        <button id="menu-link" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            <span>copy link</span>
+            <span class="shortcut">⌘⇧L</span>
+        </button>
+        <button id="menu-code" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>code</span>
+            <span class="shortcut">⌘⇧G</span>
+        </button>
+        <button id="menu-theme" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6.87175 3.42759L4.23175 12.2276C4.11626 12.6126 4.40453 13 4.80645 13H19.1936C19.5955 13 19.8838 12.6126 19.7683 12.2276L17.1283 3.42759C17.0521 3.1738 16.8185 3 16.5536 3H7.44645C7.18148 3 6.94789 3.1738 6.87175 3.42759Z"/>
+                <path d="M8 15V13"/>
+                <path d="M8 21H16M12 15V21"/>
+            </svg>
+            <span id="theme-text">dark mode</span>
+            <span class="shortcut">⌘⇧D</span>
+        </button>
+        <button id="menu-prev-docs" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 11V4.6C2 4.26863 2.26863 4 2.6 4H8.77805C8.92127 4 9.05977 4.05124 9.16852 4.14445L12.3315 6.85555C12.4402 6.94876 12.5787 7 12.722 7H21.4C21.7314 7 22 7.26863 22 7.6V11M2 11V19.4C2 19.7314 2.26863 20 2.6 20H21.4C21.7314 20 22 19.7314 22 19.4V11M2 11H22"/>
+            </svg>
+            <span>older files</span>
+            <span class="shortcut">⌘⇧O</span>
+        </button>
+        <button id="menu-clear-db" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.99219 13H11.9922H14.9922"/>
+                <path d="M3.03931 4.2939C3.01461 4.10866 3.07922 3.92338 3.23145 3.81499C3.92732 3.31953 6.31432 2 12.0001 2C17.6859 2 20.0729 3.31952 20.7688 3.81499C20.921 3.92338 20.9856 4.10866 20.9609 4.2939L19.2617 17.0378C19.0969 18.2744 18.3645 19.3632 17.2814 19.9821L16.9615 20.1649C13.8872 21.9217 10.113 21.9217 7.03873 20.1649L6.71885 19.9821C5.63572 19.3632 4.90337 18.2744 4.7385 17.0378L3.03931 4.2939Z"/>
+                <path d="M3 5C5.57143 7.66666 18.4286 7.66662 21 5"/>
+            </svg>
+            <span>delete local files</span>
+        </button>
+    </div>
+
+    <!-- Previous Docs Menu -->
+    <div id="previous-docs-menu" class="context-menu previous-docs-menu">
+        <div id="previous-docs-list"></div>
+    </div>
+</body>
+</html>
