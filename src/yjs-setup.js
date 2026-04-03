@@ -35,14 +35,19 @@ export function setupYjs(editorTextarea) {
     });
 
     const ytext = ydoc.getText('editor');
-    const y_filename = ydoc.getText('filename');
     
     new TextAreaBinding(ytext, editorTextarea);
 
-    y_filename.observe((event, transaction) => {
-        const newName = y_filename.toString();
-        document.title = `${newName} - textfile.me`;
-    });
+    const updateTitle = () => {
+        const textContent = ytext.toString().trim();
+        let newTitle = textContent.slice(0, 10).replace(/\n/g, ' ');
+        if (!newTitle) {
+            newTitle = 'textfile.me';
+        } else {
+            newTitle = `${newTitle} - textfile.me`;
+        }
+        document.title = newTitle;
+    };
 
     // --- 4. Registry for Previous Docs ---
     const updateRegistry = () => {
@@ -79,24 +84,16 @@ export function setupYjs(editorTextarea) {
 
     let debounceTimer;
     ytext.observe(() => {
+        updateTitle();
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(updateRegistry, 1000);
     });
 
     persistence.on('synced', () => {
         updateRegistry(); // Update registry on load
+        updateTitle();
 
         console.log('[DEBUG] IndexedDB persistence synced.');
-        if (y_filename.length === 0) {
-            // Use the room name (without prefix) as the default title.
-            const defaultTitle = roomName.startsWith('textfile-me-') 
-                ? 'Untitled.txt' 
-                : `${roomName}.txt`;
-            y_filename.insert(0, defaultTitle);
-        } else {
-            const currentName = y_filename.toString();
-            document.title = `${currentName} - textfile.me`;
-        }
     });
     
     console.log('[DEBUG] Y.js setup complete.');

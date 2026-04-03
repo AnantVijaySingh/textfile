@@ -235,6 +235,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Keyboard Shortcuts ---
+    document.addEventListener('keydown', (e) => {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+        
+        if (!cmdOrCtrl) return;
+
+        // Cmd/Ctrl + S : Download
+        if (e.key === 's' || e.key === 'S') {
+            e.preventDefault();
+            menuDownload.click();
+            return;
+        }
+
+        if (e.altKey) {
+            // Cmd/Ctrl + Alt + N : New
+            if (e.code === 'KeyN') {
+                e.preventDefault();
+                menuNew.click();
+                return;
+            }
+        }
+
+        if (e.shiftKey) {
+            switch(e.code) {
+                case 'KeyC':
+                    e.preventDefault();
+                    menuCopy.click();
+                    break;
+                case 'KeyL':
+                    e.preventDefault();
+                    menuLink.click();
+                    break;
+                case 'KeyG':
+                    e.preventDefault();
+                    menuCode.click();
+                    break;
+                case 'KeyD':
+                    e.preventDefault();
+                    menuTheme.click();
+                    break;
+                case 'KeyO':
+                    e.preventDefault();
+                    menuPrevDocs.click();
+                    break;
+            }
+        }
+    });
+
     // Clean up WebSocket on page unload to avoid Firefox warnings
     window.addEventListener('beforeunload', () => {
         provider.destroy();
