@@ -1,6 +1,6 @@
 # textfile.me
 
-An ultra-simple, offline-first, browser-based text editor that supports real-time synchronization and prioritizes privacy. The entire application acts as a single distraction-free text area with a custom right-click context menu for actions. Your data is stored in your browser's local storage (IndexedDB) and is available offline. Each file has a unique link that can be shared for end-to-end collaborative editing (users must be online together).
+An ultra-simple, offline-first, browser-based text editor that supports real-time synchronization and prioritizes privacy. The entire application acts as a single distraction-free text area with a custom right-click context menu for actions. Your data is stored in your browser's local storage (IndexedDB) and is available offline. Each file has a unique link that can be shared for end-to-end encrypted collaborative editing (users must be online together).
 
 ## Features
 
