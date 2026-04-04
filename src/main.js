@@ -2,23 +2,40 @@ import { setupYjs } from './yjs-setup.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const editorTextarea = document.getElementById('editor');
+    const drawingCanvas = document.getElementById('drawing-canvas');
     
-    // --- Y.js Setup ---
-    const { ydoc, persistence, provider } = setupYjs(editorTextarea);
+    const isDrawing = window.location.hash.startsWith('#draw-');
 
     // --- Context Menu Logic ---
     const contextMenu = document.getElementById('custom-context-menu');
-    const menuNew = document.getElementById('menu-new');
+    const menuNewText = document.getElementById('menu-new-text');
+    const menuNewDrawing = document.getElementById('menu-new-drawing');
     const menuCopy = document.getElementById('menu-copy');
     const menuDownload = document.getElementById('menu-download');
     const menuLink = document.getElementById('menu-link');
     const menuCode = document.getElementById('menu-code');
     const menuTheme = document.getElementById('menu-theme');
     const menuPrevDocs = document.getElementById('menu-prev-docs');
+    const menuClearCanvas = document.getElementById('menu-clear-canvas');
     const menuClearDb = document.getElementById('menu-clear-db');
     const themeText = document.getElementById('theme-text');
     const previousDocsMenu = document.getElementById('previous-docs-menu');
     const previousDocsList = document.getElementById('previous-docs-list');
+
+    if (isDrawing) {
+        editorTextarea.style.display = 'none';
+        drawingCanvas.style.display = 'block';
+        menuClearCanvas.style.display = 'flex';
+        
+        const copySpan = menuCopy.querySelector('span:not(.shortcut)');
+        if (copySpan) copySpan.textContent = 'copy image';
+        
+        const dlSpan = menuDownload.querySelector('span:not(.shortcut)');
+        if (dlSpan) dlSpan.textContent = 'download image';
+    }
+
+    // --- Y.js Setup ---
+    const { ydoc, persistence, provider } = setupYjs(editorTextarea, drawingCanvas, isDrawing);
 
     // --- Theme Setup ---
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -76,41 +93,106 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Actions ---
-    menuNew.addEventListener('click', () => {
+    menuNewText.addEventListener('click', () => {
         contextMenu.classList.remove('visible');
-        // Redirect to a new document without a hash
         window.location.hash = '';
         window.location.reload();
     });
 
+    menuNewDrawing.addEventListener('click', () => {
+        contextMenu.classList.remove('visible');
+        const drawHash = `draw-${Math.random().toString(36).substr(2, 9)}`;
+        window.location.hash = drawHash;
+        window.location.reload();
+    });
+
+    menuClearCanvas.addEventListener('click', () => {
+        contextMenu.classList.remove('visible');
+        if (confirm('Clear the entire drawing? This action cannot be undone.')) {
+            const yStrokes = ydoc.getArray('drawing-strokes');
+            ydoc.transact(() => {
+                yStrokes.delete(0, yStrokes.length);
+            });
+        }
+    });
+
     menuCopy.addEventListener('click', () => {
         contextMenu.classList.remove('visible');
-        navigator.clipboard.writeText(editorTextarea.value).then(() => {
-            // Success
-        }).catch(err => {
-            console.error('Failed to copy text: ', err);
-            alert('Error: Could not copy text to clipboard.');
-        });
+        if (isDrawing) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = drawingCanvas.width;
+            tempCanvas.height = drawingCanvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            const bgColor = getComputedStyle(drawingCanvas).backgroundColor || '#FFFFFF';
+            tCtx.fillStyle = bgColor;
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.drawImage(drawingCanvas, 0, 0);
+
+            tempCanvas.toBlob(blob => {
+                if (blob) {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        navigator.clipboard.write([item]).then(() => {
+                            // Success
+                        }).catch(err => {
+                            console.error('Failed to copy image: ', err);
+                            alert('Error: Could not copy image to clipboard.');
+                        });
+                    } catch (err) {
+                        console.error('ClipboardItem not supported', err);
+                        alert('Error: Copying images is not supported in this browser.');
+                    }
+                }
+            }, 'image/png');
+        } else {
+            navigator.clipboard.writeText(editorTextarea.value).then(() => {
+                // Success
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Error: Could not copy text to clipboard.');
+            });
+        }
     });
 
     menuDownload.addEventListener('click', () => {
         contextMenu.classList.remove('visible');
-        const textToSave = editorTextarea.value;
         const roomName = window.location.hash.slice(1) || 'Untitled';
-        const finalFileName = roomName.startsWith('textfile-me-') ? 'Untitled.txt' : `${roomName}.txt`;
+        
+        if (isDrawing) {
+            const finalFileName = roomName.startsWith('draw-') ? 'Drawing.png' : `${roomName}.png`;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = drawingCanvas.width;
+            tempCanvas.height = drawingCanvas.height;
+            const tCtx = tempCanvas.getContext('2d');
+            const bgColor = getComputedStyle(drawingCanvas).backgroundColor || '#FFFFFF';
+            tCtx.fillStyle = bgColor;
+            tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tCtx.drawImage(drawingCanvas, 0, 0);
 
-        const blob = new Blob([textToSave], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = finalFileName;
-        
-        document.body.appendChild(a);
-        a.click();
-        
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+            const url = tempCanvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = finalFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } else {
+            const textToSave = editorTextarea.value;
+            const finalFileName = roomName.startsWith('textfile-me-') ? 'Untitled.txt' : `${roomName}.txt`;
+
+            const blob = new Blob([textToSave], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = finalFileName;
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     });
 
     menuLink.addEventListener('click', () => {
@@ -250,16 +332,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (e.altKey) {
-            // Cmd/Ctrl + Alt + N : New
+            // Cmd/Ctrl + Alt + N : New Text
             if (e.code === 'KeyN') {
                 e.preventDefault();
-                menuNew.click();
+                menuNewText.click();
+                return;
+            }
+            // Cmd/Ctrl + Alt + Y : New Drawing
+            if (e.code === 'KeyY') {
+                e.preventDefault();
+                menuNewDrawing.click();
                 return;
             }
         }
 
         if (e.shiftKey) {
             switch(e.code) {
+                case 'KeyX':
+                    e.preventDefault();
+                    if (isDrawing) menuClearCanvas.click();
+                    break;
                 case 'KeyC':
                     e.preventDefault();
                     menuCopy.click();

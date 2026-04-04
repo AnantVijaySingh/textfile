@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait briefly for Yjs and app logic to fully initialize
     setTimeout(runTests, 1000);
 });
 
@@ -27,58 +26,78 @@ function assert(condition, testName, errorMsg) {
 }
 
 async function runTests() {
+    const isDrawingPhase = window.location.hash.startsWith('#draw-test');
+
+    if (isDrawingPhase) {
+        runDrawingTests();
+    } else {
+        runTextTests();
+    }
+}
+
+function runDrawingTests() {
+    const canvas = document.getElementById('drawing-canvas');
+    const editor = document.getElementById('editor');
+
+    assert(
+        canvas.style.display === 'block' && editor.style.display === 'none',
+        'Routing: Canvas is visible and editor is hidden for #draw- hashes',
+        'Display styles are incorrect for drawing mode.'
+    );
+
+    // Simulate drawing
+    const rect = canvas.getBoundingClientRect();
+    canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: rect.left + 10, clientY: rect.top + 10, bubbles: true }));
+    canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: rect.left + 20, clientY: rect.top + 20, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+
+    // Wait for Yjs debounce to save to registry
+    setTimeout(() => {
+        const registry = JSON.parse(localStorage.getItem('textfile_docs') || '[]');
+        const foundDoc = registry.find(doc => doc.id === 'draw-test');
+        
+        assert(
+            foundDoc && foundDoc.type === 'drawing',
+            'Drawing Registry: Stroke saved to local storage registry correctly',
+            'Drawing doc not found or incorrect type in registry.'
+        );
+
+        // Finish testing
+        window.location.hash = ''; // Clean up hash
+        const passedCount = document.querySelectorAll('.pass').length;
+        const totalCount = document.querySelectorAll('#test-list li').length;
+        logTest(`COMPLETED ALL PHASES: ${passedCount}/${totalCount} tests passed.`, passedCount === totalCount);
+    }, 1200);
+}
+
+function runTextTests() {
     const editor = document.getElementById('editor');
     const contextMenu = document.getElementById('custom-context-menu');
     const menuTheme = document.getElementById('menu-theme');
     
     // --- Test 1: Context Menu Visibility ---
     document.dispatchEvent(new MouseEvent('contextmenu', {
-        bubbles: true,
-        cancelable: true,
-        clientX: 100,
-        clientY: 100
+        bubbles: true, cancelable: true, clientX: 100, clientY: 100
     }));
     
-    assert(
-        contextMenu.classList.contains('visible'), 
-        'Context menu appears on right click', 
-        'Context menu did not get the "visible" class.'
-    );
+    assert(contextMenu.classList.contains('visible'), 'Context menu appears on right click', 'Menu not visible.');
 
     // --- Test 2: Clicking outside closes context menu ---
     document.dispatchEvent(new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        clientX: 500,
-        clientY: 500
+        bubbles: true, cancelable: true, clientX: 500, clientY: 500
     }));
     
-    assert(
-        !contextMenu.classList.contains('visible'), 
-        'Context menu hides when clicking outside', 
-        'Context menu still has the "visible" class after click.'
-    );
+    assert(!contextMenu.classList.contains('visible'), 'Context menu hides when clicking outside', 'Menu still visible.');
 
     // --- Test 3: Theme Toggle ---
     const initialTheme = document.documentElement.getAttribute('data-theme');
-    
-    // Open menu to click theme button
     document.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
     menuTheme.click();
-    
     const newTheme = document.documentElement.getAttribute('data-theme');
-    assert(
-        initialTheme !== newTheme, 
-        'Theme toggles on button click', 
-        `Theme did not change. Initial: ${initialTheme}, New: ${newTheme}`
-    );
-
-    // Revert theme for state consistency
-    document.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
-    menuTheme.click();
+    assert(initialTheme !== newTheme, 'Theme toggles on button click', 'Theme did not change.');
+    menuTheme.click(); // Revert
 
     // --- Test 4: Typing State & Document Title ---
-    // Reset state before test
     localStorage.removeItem('has_typed');
     editor.setAttribute('placeholder', 'Test Placeholder');
     editor.value = '';
@@ -87,50 +106,28 @@ async function runTests() {
     editor.value = testText;
     editor.dispatchEvent(new Event('input', { bubbles: true }));
 
-    // The has_typed logic in main.js fires immediately on input
-    assert(
-        localStorage.getItem('has_typed') === 'true',
-        'has_typed flag is set in localStorage when typing',
-        'localStorage item "has_typed" was not "true"'
-    );
+    assert(localStorage.getItem('has_typed') === 'true', 'has_typed flag is set in localStorage when typing', 'Flag not true.');
+    assert(!editor.hasAttribute('placeholder'), 'Placeholder is removed when typing starts', 'Placeholder not removed.');
 
-    assert(
-        !editor.hasAttribute('placeholder'),
-        'Placeholder is removed when typing starts',
-        'Editor still has the placeholder attribute.'
-    );
-
-    // The title update relies on ytext observation which has a debounce and might need slight delay to process via Yjs.
-    // However, Yjs observe for title is immediate now in the setup.
-    // Give it a tiny tick for Yjs to sync the value change if it wasn't triggered natively by the `input` event,
-    // wait, we changed the editor value programmatically but Yjs TextAreaBinding relies on native input events.
-    // To ensure Yjs picks it up reliably in a test, let's wait a bit.
-    
     setTimeout(() => {
         const expectedTitlePrefix = testText.slice(0, 10);
-        assert(
-            document.title.includes(expectedTitlePrefix),
-            'Document title updates to match text',
-            `Title "${document.title}" does not contain "${expectedTitlePrefix}"`
-        );
+        assert(document.title.includes(expectedTitlePrefix), 'Document title updates to match text', 'Title incorrect.');
         
         // --- Test 5: Document Registry Logic ---
-        // updateRegistry is debounced by 1000ms. We wait >1000ms to check.
         setTimeout(() => {
             const registry = JSON.parse(localStorage.getItem('textfile_docs') || '[]');
             const currentHash = window.location.hash.slice(1);
             const foundDoc = registry.find(doc => doc.id === currentRoomOrHash(currentHash));
             
-            assert(
-                foundDoc && foundDoc.excerpt === testText,
-                'Document excerpt is saved to local registry',
-                `Registry did not contain the correct excerpt. Found: ${foundDoc ? foundDoc.excerpt : 'No doc found'}`
-            );
+            assert(foundDoc && foundDoc.excerpt === testText, 'Document excerpt is saved to local registry', 'Excerpt incorrect.');
 
-            // Add final summary
-            const passedCount = document.querySelectorAll('.pass').length;
-            const totalCount = document.querySelectorAll('#test-list li').length;
-            logTest(`COMPLETED: ${passedCount}/${totalCount} tests passed.`, passedCount === totalCount);
+            // Proceed to Phase 2: Drawing Tests
+            logTest('Text phase complete. Reloading for drawing phase...', true);
+            setTimeout(() => {
+                window.location.hash = 'draw-test';
+                window.location.reload();
+            }, 1000);
+
         }, 1200);
 
     }, 100);
@@ -138,10 +135,7 @@ async function runTests() {
 
 function currentRoomOrHash(hash) {
     if (hash) return hash;
-    // Fallback if hash isn't set yet during test run
     const registry = JSON.parse(localStorage.getItem('textfile_docs') || '[]');
-    if (registry.length > 0) {
-        return registry[0].id;
-    }
+    if (registry.length > 0) return registry[0].id;
     return '';
 }

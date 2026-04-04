@@ -9,7 +9,7 @@ import { TextAreaBinding } from 'y-textarea';
  * @param {HTMLTextAreaElement} editorTextarea - The main text editor element.
  * @returns {{ydoc: Y.Doc, persistence: IndexeddbPersistence, provider: WebrtcProvider}}
  */
-export function setupYjs(editorTextarea) {
+export function setupYjs(editorTextarea, drawingCanvas, isDrawing) {
     // --- 1. Determine the document room name from the URL hash ---
     let roomName = window.location.hash.slice(1);
     if (!roomName) {
@@ -32,16 +32,126 @@ export function setupYjs(editorTextarea) {
     });
 
     const ytext = ydoc.getText('editor');
+    const yStrokes = ydoc.getArray('drawing-strokes');
     
-    new TextAreaBinding(ytext, editorTextarea);
+    if (!isDrawing) {
+        new TextAreaBinding(ytext, editorTextarea);
+    }
+
+    // --- Canvas Drawing Logic ---
+    if (isDrawing && drawingCanvas) {
+        const ctx = drawingCanvas.getContext('2d');
+        let currentStroke = null;
+        
+        const renderStrokes = () => {
+            ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+            const defaultColor = theme === 'dark' ? '#FFFFFF' : '#000000';
+
+            yStrokes.forEach(strokeMap => {
+                const points = strokeMap.get('points');
+                const color = strokeMap.get('color') || defaultColor;
+                
+                if (!points || points.length === 0) return;
+                
+                ctx.strokeStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(points.get(0)[0], points.get(0)[1]);
+                for (let i = 1; i < points.length; i++) {
+                    ctx.lineTo(points.get(i)[0], points.get(i)[1]);
+                }
+                ctx.stroke();
+            });
+        };
+
+        const resizeCanvas = () => {
+            const rect = drawingCanvas.getBoundingClientRect();
+            drawingCanvas.width = rect.width;
+            drawingCanvas.height = rect.height;
+            renderStrokes();
+        };
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 0); // initial resize
+
+        yStrokes.observeDeep(() => {
+            renderStrokes();
+        });
+        
+        const observer = new MutationObserver(() => renderStrokes());
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+        // Local interactions
+        let isPointersDown = false;
+        
+        const getPointerPos = (e) => {
+            const rect = drawingCanvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            return [clientX - rect.left, clientY - rect.top];
+        };
+
+        const startDrawing = (e) => {
+            e.preventDefault();
+            isPointersDown = true;
+            const pos = getPointerPos(e);
+            
+            const stroke = new Y.Map();
+            const points = new Y.Array();
+            points.push([pos]);
+            stroke.set('points', points);
+            
+            ydoc.transact(() => {
+                yStrokes.push([stroke]);
+            });
+            currentStroke = stroke;
+        };
+
+        const continueDrawing = (e) => {
+            if (!isPointersDown || !currentStroke) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const points = currentStroke.get('points');
+            ydoc.transact(() => {
+                points.push([pos]);
+            });
+        };
+
+        const endDrawing = (e) => {
+            if (!isPointersDown) return;
+            e.preventDefault();
+            isPointersDown = false;
+            currentStroke = null;
+        };
+
+        drawingCanvas.addEventListener('mousedown', startDrawing);
+        drawingCanvas.addEventListener('mousemove', continueDrawing);
+        window.addEventListener('mouseup', endDrawing);
+
+        drawingCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+        drawingCanvas.addEventListener('touchmove', continueDrawing, { passive: false });
+        window.addEventListener('touchend', endDrawing);
+    }
 
     const updateTitle = () => {
-        const textContent = ytext.toString().trim();
-        let newTitle = textContent.slice(0, 10).replace(/\n/g, ' ');
-        if (!newTitle) {
-            newTitle = 'textfile.me';
+        let newTitle;
+        if (isDrawing) {
+            newTitle = 'Drawing - textfile.me';
         } else {
-            newTitle = `${newTitle} - textfile.me`;
+            const textContent = ytext.toString().trim();
+            newTitle = textContent.slice(0, 10).replace(/\n/g, ' ');
+            if (!newTitle) {
+                newTitle = 'textfile.me';
+            } else {
+                newTitle = `${newTitle} - textfile.me`;
+            }
         }
         document.title = newTitle;
     };
@@ -55,10 +165,17 @@ export function setupYjs(editorTextarea) {
             registry = [];
         }
 
-        const textContent = ytext.toString();
-        let excerpt = textContent.slice(0, 100).replace(/\n/g, ' ');
-        if (!excerpt.trim()) {
-            excerpt = "Empty Document";
+        let excerpt = "";
+        let type = "text";
+        if (isDrawing) {
+            type = "drawing";
+            excerpt = "Drawing Workspace";
+        } else {
+            const textContent = ytext.toString();
+            excerpt = textContent.slice(0, 100).replace(/\n/g, ' ');
+            if (!excerpt.trim()) {
+                excerpt = "Empty Document";
+            }
         }
 
         // Remove existing entry for this room if it exists
@@ -67,6 +184,7 @@ export function setupYjs(editorTextarea) {
         // Add to the top
         registry.unshift({
             id: roomName,
+            type: type,
             excerpt: excerpt,
             lastAccessed: Date.now()
         });
@@ -80,11 +198,17 @@ export function setupYjs(editorTextarea) {
     };
 
     let debounceTimer;
-    ytext.observe(() => {
+    const triggerUpdate = () => {
         updateTitle();
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(updateRegistry, 1000);
-    });
+    };
+
+    if (isDrawing) {
+        yStrokes.observeDeep(triggerUpdate);
+    } else {
+        ytext.observe(triggerUpdate);
+    }
 
     persistence.on('synced', () => {
         updateRegistry(); // Update registry on load
