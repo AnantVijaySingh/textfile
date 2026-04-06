@@ -54,35 +54,77 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Show custom context menu
-    document.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        
+    // --- Context Menu Helper ---
+    const showContextMenu = (clientX, clientY) => {
         // Remove active class from the HTML template default (if any)
         document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
 
-        const { clientX: mouseX, clientY: mouseY } = e;
-        
         // Prevent menu from going off-screen
         const menuWidth = 180; // approximate
         const menuHeight = 220; // approximate
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         
-        let posX = mouseX;
-        let posY = mouseY;
+        let posX = clientX;
+        let posY = clientY;
         
-        if (mouseX + menuWidth > windowWidth) {
+        if (clientX + menuWidth > windowWidth) {
             posX = windowWidth - menuWidth - 10;
         }
-        if (mouseY + menuHeight > windowHeight) {
+        if (clientY + menuHeight > windowHeight) {
             posY = windowHeight - menuHeight - 10;
         }
 
         contextMenu.style.left = `${posX}px`;
         contextMenu.style.top = `${posY}px`;
         contextMenu.classList.add('visible');
+    };
+
+    // Show custom context menu (Right-click)
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showContextMenu(e.clientX, e.clientY);
     });
+
+    // --- Mobile Long-Press Detection ---
+    let longPressTimer;
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return; // Only trigger on single touch
+        
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+
+        longPressTimer = setTimeout(() => {
+            // Trigger long press context menu
+            if (navigator.vibrate) navigator.vibrate(50); // Provide slight haptic feedback
+            showContextMenu(touchStartX, touchStartY);
+        }, 500); // 500ms hold time
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!longPressTimer) return;
+
+        // If the user moves their finger more than ~10px, cancel the long press
+        const moveX = e.touches[0].clientX;
+        const moveY = e.touches[0].clientY;
+        if (Math.abs(moveX - touchStartX) > 10 || Math.abs(moveY - touchStartY) > 10) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    }, { passive: false });
+
+    const clearLongPress = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+    };
+
+    document.addEventListener('touchend', clearLongPress);
+    document.addEventListener('touchcancel', clearLongPress);
 
     // Hide context menu on click outside
     document.addEventListener('click', (e) => {

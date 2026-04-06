@@ -111,45 +111,52 @@ function runTextTests() {
     // --- Test 3: Theme Toggle ---
     const initialTheme = document.documentElement.getAttribute('data-theme');
     document.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 100, clientY: 100 }));
-    menuTheme.click();
-    const newTheme = document.documentElement.getAttribute('data-theme');
-    assert(initialTheme !== newTheme, 'Theme toggles on button click', 'Theme did not change.');
-    menuTheme.click(); // Revert
-
-    // --- Test 4: Typing State & Document Title ---
-    localStorage.removeItem('has_typed');
-    editor.setAttribute('placeholder', 'Test Placeholder');
-    editor.value = '';
-
-    const testText = 'Hello Test';
-    editor.value = testText;
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
-
-    assert(localStorage.getItem('has_typed') === 'true', 'has_typed flag is set in localStorage when typing', 'Flag not true.');
-    assert(!editor.hasAttribute('placeholder'), 'Placeholder is removed when typing starts', 'Placeholder not removed.');
-
+    
+    // Dispatch native click event instead of .click() for better simulation
+    menuTheme.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    
     setTimeout(() => {
-        const expectedTitlePrefix = testText.slice(0, 10);
-        assert(document.title.includes(expectedTitlePrefix), 'Document title updates to match text', 'Title incorrect.');
+        const newTheme = document.documentElement.getAttribute('data-theme');
+        assert(initialTheme !== newTheme, 'Theme toggles on button click', 'Theme did not change.');
         
-        // --- Test 5: Document Registry Logic ---
+        // Revert
+        menuTheme.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+        // --- Test 4: Typing State & Document Title ---
+        localStorage.removeItem('has_typed');
+        editor.setAttribute('placeholder', 'Test Placeholder');
+        editor.value = '';
+
+        const testText = 'Hello Test';
+        editor.value = testText;
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+
+        assert(localStorage.getItem('has_typed') === 'true', 'has_typed flag is set in localStorage when typing', 'Flag not true.');
+        assert(!editor.hasAttribute('placeholder'), 'Placeholder is removed when typing starts', 'Placeholder not removed.');
+
         setTimeout(() => {
-            const registry = JSON.parse(localStorage.getItem('textfile_docs') || '[]');
-            const currentHash = window.location.hash.slice(1);
-            const foundDoc = registry.find(doc => doc.id === currentRoomOrHash(currentHash));
+            const expectedTitlePrefix = testText.slice(0, 10);
+            assert(document.title.includes(expectedTitlePrefix), 'Document title updates to match text', 'Title incorrect.');
             
-            assert(foundDoc && foundDoc.excerpt === testText, 'Document excerpt is saved to local registry', 'Excerpt incorrect.');
-
-            // Proceed to Phase 2: Drawing Tests
-            logTest('Text phase complete. Reloading for drawing phase...', true);
+            // --- Test 5: Document Registry Logic ---
             setTimeout(() => {
-                window.location.hash = 'draw-test';
-                window.location.reload();
-            }, 1000);
+                const registry = JSON.parse(localStorage.getItem('textfile_docs') || '[]');
+                const currentHash = window.location.hash.slice(1);
+                const foundDoc = registry.find(doc => doc.id === currentRoomOrHash(currentHash));
+                
+                assert(foundDoc && foundDoc.excerpt === testText, 'Document excerpt is saved to local registry', 'Excerpt incorrect.');
 
-        }, 1200);
+                // Proceed to Phase 2: Drawing Tests
+                logTest('Text phase complete. Reloading for drawing phase...', true);
+                setTimeout(() => {
+                    window.location.hash = 'draw-test';
+                    window.location.reload();
+                }, 1000);
 
-    }, 100);
+            }, 1200);
+
+        }, 100);
+    }, 50); // 50ms delay for DOM to update
 }
 
 function currentRoomOrHash(hash) {
