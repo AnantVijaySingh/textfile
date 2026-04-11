@@ -15,10 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuLink = document.getElementById('menu-link');
     const menuCode = document.getElementById('menu-code');
     const menuTheme = document.getElementById('menu-theme');
+    const menuMarkdown = document.getElementById('menu-markdown');
     const menuPrevDocs = document.getElementById('menu-prev-docs');
     const menuClearCanvas = document.getElementById('menu-clear-canvas');
     const menuClearDb = document.getElementById('menu-clear-db');
     const themeText = document.getElementById('theme-text');
+    const markdownText = document.getElementById('markdown-text');
     const previousDocsMenu = document.getElementById('previous-docs-menu');
     const previousDocsList = document.getElementById('previous-docs-list');
 
@@ -32,6 +34,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const dlSpan = menuDownload.querySelector('span:not(.shortcut)');
         if (dlSpan) dlSpan.textContent = 'download image';
+    } else {
+        const editorHighlight = document.getElementById('editor-highlight');
+        if (editorHighlight) {
+            editorTextarea.addEventListener('scroll', () => {
+                editorHighlight.scrollTop = editorTextarea.scrollTop;
+                editorHighlight.scrollLeft = editorTextarea.scrollLeft;
+            });
+        }
     }
 
     // --- Y.js Setup ---
@@ -40,7 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Theme Setup ---
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
-    themeText.textContent = savedTheme === 'light' ? 'dark mode' : 'light mode';
+    if (themeText) themeText.textContent = savedTheme === 'light' ? 'dark mode' : 'light mode';
+
+    // --- Markdown Setup ---
+    const savedMarkdown = localStorage.getItem('markdown') || 'on';
+    document.documentElement.setAttribute('data-markdown', savedMarkdown);
+    if (markdownText) markdownText.textContent = savedMarkdown === 'on' ? 'markdown on' : 'markdown off';
 
     // --- Placeholder Logic ---
     if (localStorage.getItem('has_typed') === 'true') {
@@ -262,6 +277,18 @@ document.addEventListener('DOMContentLoaded', () => {
         themeText.textContent = newTheme === 'light' ? 'dark mode' : 'light mode';
     });
 
+    if (menuMarkdown) {
+        menuMarkdown.addEventListener('click', () => {
+            contextMenu.classList.remove('visible');
+            const currentMd = document.documentElement.getAttribute('data-markdown');
+            const newMd = currentMd === 'on' ? 'off' : 'on';
+            document.documentElement.setAttribute('data-markdown', newMd);
+            localStorage.setItem('markdown', newMd);
+            if (markdownText) markdownText.textContent = newMd === 'on' ? 'markdown on' : 'markdown off';
+            window.dispatchEvent(new Event('markdown-toggled'));
+        });
+    }
+
     menuPrevDocs.addEventListener('click', (e) => {
         e.stopPropagation();
         
@@ -409,6 +436,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'KeyD':
                     e.preventDefault();
                     menuTheme.click();
+                    break;
+                case 'KeyM':
+                    e.preventDefault();
+                    if (menuMarkdown) menuMarkdown.click();
                     break;
                 case 'KeyO':
                     e.preventDefault();

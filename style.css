@@ -11,6 +11,13 @@
     
     --font-primary: 'Space Mono', monospace;
     --font-editor: 'Space Mono', monospace;
+
+    --md-h-color: #F46036;
+    --md-bold-color: #A5BE00;
+    --md-italic-color: #02C39A;
+    --md-link-color: #7A07C4;
+    --md-quote-color: #551B14;
+    --md-code-color: #4CB944;
 }
 
 html[data-theme="dark"] {
@@ -23,6 +30,13 @@ html[data-theme="dark"] {
     --menu-text: #C489FF;
     --menu-hover-bg: #7E22CE;
     --menu-hover-text: #FFFFFF;
+
+    --md-h-color: #FF7A50;
+    --md-bold-color: #B5CE10;
+    --md-italic-color: #12D3AA;
+    --md-link-color: #9D36E1;
+    --md-quote-color: #923C30;
+    --md-code-color: #5CC954;
 }
 
 @font-face {
@@ -61,25 +75,53 @@ html, body {
     width: 100%;
 }
 
-.editor-textarea {
+.editor-wrapper {
+    position: relative;
     width: 100%;
     max-width: 750px;
     height: 100%;
-    border: none;
-    outline: none;
     background-color: var(--editor-bg);
     border-radius: 16px;
-    color: var(--text-color);
-    caret-color: #7A07C4;
+    overflow: hidden;
+}
+
+.editor-textarea, .editor-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
     font-family: var(--font-editor);
     font-size: 16px;
     line-height: 1.6;
-    resize: none;
     padding: 32px 48px;
     box-sizing: border-box;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.editor-textarea {
+    background-color: transparent;
+    color: transparent; /* Makes text invisible so underlying highlight shows */
+    caret-color: #7A07C4; /* Keep cursor visible */
+    resize: none;
+    z-index: 2;
     /* Hide scrollbar for IE, Edge and Firefox */
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+    overflow-y: auto;
+}
+
+.editor-highlight {
+    background-color: transparent;
+    color: var(--text-color);
+    z-index: 1;
+    overflow-y: hidden; /* Scroll is handled via JS sync */
+    pointer-events: none; /* Let clicks pass through to textarea */
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -90,6 +132,14 @@ html, body {
 .editor-textarea::placeholder {
     color: var(--placeholder-color);
 }
+
+/* Markdown Highlight Styles */
+.md-bold { color: var(--md-bold-color); }
+.md-italic { color: var(--md-italic-color); }
+.md-h { color: var(--md-h-color); }
+.md-link { color: var(--md-link-color); }
+.md-quote { color: var(--md-quote-color); }
+.md-code { color: var(--md-code-color); }
 
 .drawing-canvas {
     width: 100%;
@@ -232,6 +282,16 @@ html, body {
 }
 
 .prev-doc-item:hover .prev-doc-action-btn svg {
+    stroke: var(--menu-hover-text);
+}
+
+.no-docs-message {
+    padding: 16px 20px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--menu-text);
+    opacity: 0.7;
+}svg {
     stroke: var(--menu-hover-text);
 }
 

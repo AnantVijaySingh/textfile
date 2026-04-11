@@ -36,19 +36,28 @@
 
     <div class="app-container">
         <main class="editor-container">
-            <textarea 
-                id="editor" 
-                class="editor-textarea" 
-                placeholder="Welcome to a Text File. A simple text editor. Your data is stored in local storage and available offline. Each file has a unique link that can be shared for ee2e collaborative editing. Because the data is local only, to collborate, all users must be online together. Right click for more options. Made with Love by Anant with help from Gemini, Calude and Lumo ♥."></textarea>
+            <div class="editor-wrapper" id="editor-wrapper">
+                <pre id="editor-highlight" class="editor-highlight" aria-hidden="true"></pre>
+                <textarea 
+                    id="editor" 
+                    class="editor-textarea" 
+                    placeholder="Welcome to a Text File. A simple text and drawing editor. Your data is stored in local storage and available offline. Each file has a unique link that can be shared for ee2e collaborative editing. Because the data is local only, to collborate, all users must be online together. Right click for more options. Made with Love by Anant with help from Gemini, Calude and Lumo ♥."></textarea>
+            </div>
+            <canvas id="drawing-canvas" class="drawing-canvas" style="display: none;"></canvas>
         </main>
     </div>
 
     <!-- Custom Context Menu -->
     <div id="custom-context-menu" class="context-menu">
-        <button id="menu-new" class="menu-item">
+        <button id="menu-new-text" class="menu-item">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-            <span>new</span>
+            <span>new text</span>
             <span class="shortcut">⌘⌥N</span>
+        </button>
+        <button id="menu-new-drawing" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
+            <span>new drawing</span>
+            <span class="shortcut">⌘⌥Y</span>
         </button>
         <button id="menu-copy" class="menu-item active">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -79,12 +88,28 @@
             <span id="theme-text">dark mode</span>
             <span class="shortcut">⌘⇧D</span>
         </button>
+        <button id="menu-markdown" class="menu-item">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2.5 5.5h19M2.5 11.5h19M2.5 17.5h19M6.5 5.5v12"></path>
+            </svg>
+            <span id="markdown-text">markdown on</span>
+            <span class="shortcut">⌘⇧M</span>
+        </button>
         <button id="menu-prev-docs" class="menu-item">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 11V4.6C2 4.26863 2.26863 4 2.6 4H8.77805C8.92127 4 9.05977 4.05124 9.16852 4.14445L12.3315 6.85555C12.4402 6.94876 12.5787 7 12.722 7H21.4C21.7314 7 22 7.26863 22 7.6V11M2 11V19.4C2 19.7314 2.26863 20 2.6 20H21.4C21.7314 20 22 19.7314 22 19.4V11M2 11H22"/>
             </svg>
             <span>older files</span>
             <span class="shortcut">⌘⇧O</span>
+        </button>
+        <button id="menu-clear-canvas" class="menu-item" style="display: none;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 21L9 21"></path>
+                <path d="M15.889 14.8891L8.46436 7.46448"></path>
+                <path d="M2.8934 12.6066L12.0858 3.41421C12.8668 2.63317 14.1332 2.63317 14.9142 3.41421L19.864 8.36396C20.645 9.14501 20.645 10.4113 19.864 11.1924L10.6213 20.435C10.2596 20.7968 9.76894 21 9.25736 21C8.74577 21 8.25514 20.7968 7.8934 20.435L2.8934 15.435C2.11235 14.654 2.11235 13.3877 2.8934 12.6066Z"></path>
+            </svg>
+            <span>clear canvas</span>
+            <span class="shortcut">⌘⇧X</span>
         </button>
         <button id="menu-clear-db" class="menu-item">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -101,4 +126,3 @@
         <div id="previous-docs-list"></div>
     </div>
 </body>
-</html>

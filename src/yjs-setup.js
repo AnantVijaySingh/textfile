@@ -2,6 +2,7 @@ import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { WebrtcProvider } from 'y-webrtc';
 import { TextAreaBinding } from 'y-textarea';
+import { parseMarkdown } from './markdown-parser.js';
 
 /**
  * Initializes the Y.js document, sets up database persistence and WebRTC synchronization,
@@ -198,11 +199,25 @@ export function setupYjs(editorTextarea, drawingCanvas, isDrawing) {
     };
 
     let debounceTimer;
+    let renderFrame;
     const triggerUpdate = () => {
         updateTitle();
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(updateRegistry, 1000);
+
+        if (!isDrawing) {
+            cancelAnimationFrame(renderFrame);
+            renderFrame = requestAnimationFrame(() => {
+                const editorHighlight = document.getElementById('editor-highlight');
+                if (editorHighlight) {
+                    const isMdOn = document.documentElement.getAttribute('data-markdown') !== 'off';
+                    editorHighlight.innerHTML = parseMarkdown(ytext.toString(), isMdOn);
+                }
+            });
+        }
     };
+
+    window.addEventListener('markdown-toggled', triggerUpdate);
 
     if (isDrawing) {
         yStrokes.observeDeep(triggerUpdate);
