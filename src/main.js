@@ -215,10 +215,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     menuDownload.addEventListener('click', () => {
         contextMenu.classList.remove('visible');
-        const roomName = window.location.hash.slice(1) || 'Untitled';
+        
+        let baseName = document.title.replace(' - textfile.me', '').replace('textfile.me', '').trim();
+        if (!baseName) baseName = 'Untitled';
         
         if (isDrawing) {
-            const finalFileName = roomName.startsWith('draw-') ? 'Drawing.png' : `${roomName}.png`;
+            const finalFileName = `${baseName}.png`;
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = drawingCanvas.width;
             tempCanvas.height = drawingCanvas.height;
@@ -236,8 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
             a.click();
             document.body.removeChild(a);
         } else {
+            const isMdOn = document.documentElement.getAttribute('data-markdown') !== 'off';
+            const ext = isMdOn ? '.md' : '.txt';
             const textToSave = editorTextarea.value;
-            const finalFileName = roomName.startsWith('textfile-me-') ? 'Untitled.txt' : `${roomName}.txt`;
+            const finalFileName = `${baseName}${ext}`;
 
             const blob = new Blob([textToSave], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
