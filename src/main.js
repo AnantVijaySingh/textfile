@@ -2,6 +2,7 @@ import { setupYjs } from './yjs-setup.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const editorTextarea = document.getElementById('editor');
+    const editorWrapper = document.getElementById('editor-wrapper');
     const drawingCanvas = document.getElementById('drawing-canvas');
     
     const isDrawing = window.location.hash.startsWith('#draw-');
@@ -25,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const previousDocsList = document.getElementById('previous-docs-list');
 
     if (isDrawing) {
+        if (editorWrapper) editorWrapper.style.display = 'none';
         editorTextarea.style.display = 'none';
         drawingCanvas.style.display = 'block';
         menuClearCanvas.style.display = 'flex';
