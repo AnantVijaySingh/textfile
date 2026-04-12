@@ -44,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 editorHighlight.scrollLeft = editorTextarea.scrollLeft;
             });
         }
+        // Ensure text area has focus on page load so user can type immediately
+        editorTextarea.focus();
     }
 
     // --- Y.js Setup ---
