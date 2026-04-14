@@ -37,6 +37,10 @@ html[data-theme="dark"] {
     --md-link-color: #9D36E1;
     --md-quote-color: #923C30;
     --md-code-color: #5CC954;
+    
+    --md-strike-color: #6B7280;
+    --md-task-open-color: #FBBF24;
+    --md-task-done-color: #34D399;
 }
 
 @font-face {
@@ -140,6 +144,9 @@ html, body {
 .md-link { color: var(--md-link-color); }
 .md-quote { color: var(--md-quote-color); }
 .md-code { color: var(--md-code-color); }
+.md-strike { color: var(--md-strike-color); text-decoration: line-through; }
+.md-task-open { color: var(--md-task-open-color); }
+.md-task-done { color: var(--md-task-done-color); text-decoration: line-through; }
 
 .drawing-canvas {
     width: 100%;

@@ -29,8 +29,20 @@ export function parseMarkdown(text, enabled = true) {
         // Quote (e.g. > quote) - > is escaped to &gt;
         html = html.replace(/^(\s*)&gt;\s+(.*)$/gm, '<span class="md-quote">$1&gt; $2</span>');
 
-        // Code (e.g. `code`)
+        // Task Lists (Incomplete: - [ ] or * [ ])
+        html = html.replace(/^(\s*[-*]\s*\[ \])\s+(.*)$/gm, '<span class="md-task-open">$1</span> $2');
+
+        // Task Lists (Complete: - [x] or * [X])
+        html = html.replace(/^(\s*[-*]\s*\[[xX]\])\s+(.*)$/gm, '<span class="md-task-done">$1 $2</span>');
+
+        // Multi-line Code (e.g. ```code```) - Must run before single-line code
+        html = html.replace(/```([\s\S]*?)```/g, '<span class="md-code">```$1```</span>');
+
+        // Single-line Code (e.g. `code`)
         html = html.replace(/`(.*?)`/g, '<span class="md-code">`$1`</span>');
+
+        // Strikethrough (e.g. ~~text~~)
+        html = html.replace(/~~(.*?)~~/g, '<span class="md-strike">~~$1~~</span>');
 
         // Bold (e.g. **bold**) - match ** anything except ** then **
         html = html.replace(/\*\*(.*?)\*\*/g, '<span class="md-bold">**$1**</span>');
