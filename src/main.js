@@ -145,8 +145,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('touchend', clearLongPress);
     document.addEventListener('touchcancel', clearLongPress);
 
-    // Hide context menu on click outside
+    // Hide context menu on click outside, but allow spock button clicks
     document.addEventListener('click', (e) => {
+        const spockBtn = e.target.closest('.spock-menu-btn');
+        if (spockBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const rect = spockBtn.getBoundingClientRect();
+            // Show menu just below the button
+            showContextMenu(rect.left, rect.bottom + 8);
+            return;
+        }
+
         if (!contextMenu.contains(e.target) && !previousDocsMenu.contains(e.target)) {
             contextMenu.classList.remove('visible');
             previousDocsMenu.classList.remove('visible');

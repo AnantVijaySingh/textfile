@@ -9,6 +9,9 @@
     --menu-hover-bg: #7E22CE;
     --menu-hover-text: #FFFFFF;
     
+    --spock-bg: #FFFFFF;
+    --spock-color: #717374;
+
     --font-primary: 'Space Mono', monospace;
     --font-editor: 'Space Mono', monospace;
 
@@ -30,6 +33,9 @@ html[data-theme="dark"] {
     --menu-text: #C489FF;
     --menu-hover-bg: #7E22CE;
     --menu-hover-text: #FFFFFF;
+
+    --spock-bg: #000000;
+    --spock-color: #FFFFFF;
 
     --md-h-color: #FF7A50;
     --md-bold-color: #B5CE10;
@@ -135,6 +141,30 @@ html, body {
 
 .editor-textarea::placeholder {
     color: var(--placeholder-color);
+}
+
+.spock-menu-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 48px;
+    height: 48px;
+    background: var(--spock-bg);
+    border: none;
+    border-radius: 0 16px 0 16px;
+    color: var(--spock-color);
+    opacity: 0.8;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+.spock-menu-btn:hover {
+    opacity: 1;
+    background-color: var(--spock-bg);
 }
 
 /* Markdown Highlight Styles */
@@ -289,16 +319,6 @@ html, body {
 }
 
 .prev-doc-item:hover .prev-doc-action-btn svg {
-    stroke: var(--menu-hover-text);
-}
-
-.no-docs-message {
-    padding: 16px 20px;
-    text-align: center;
-    font-size: 14px;
-    color: var(--menu-text);
-    opacity: 0.7;
-}svg {
     stroke: var(--menu-hover-text);
 }
 
