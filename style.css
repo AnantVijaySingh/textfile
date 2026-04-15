@@ -178,6 +178,12 @@ html, body {
 .md-task-open { color: var(--md-task-open-color); }
 .md-task-done { color: var(--md-task-done-color); text-decoration: line-through; }
 
+.canvas-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
 .drawing-canvas {
     width: 100%;
     height: 100%;

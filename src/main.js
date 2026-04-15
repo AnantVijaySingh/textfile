@@ -61,6 +61,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.setAttribute('data-markdown', savedMarkdown);
     if (markdownText) markdownText.textContent = savedMarkdown === 'on' ? 'markdown on' : 'markdown off';
 
+    // --- Spock Menu Button Setup ---
+    const updateSpockVisibility = (state) => {
+        document.querySelectorAll('.spock-menu-btn').forEach(btn => {
+            btn.style.display = state === 'on' ? 'flex' : 'none';
+        });
+        if (spockToggleText) spockToggleText.textContent = state === 'on' ? 'hide menu button' : 'show menu button';
+    };
+
+    const savedSpock = localStorage.getItem('spock_button') || 'on';
+    updateSpockVisibility(savedSpock);
+
+    if (menuSpockToggle) {
+        menuSpockToggle.addEventListener('click', () => {
+            contextMenu.classList.remove('visible');
+            const currentState = localStorage.getItem('spock_button') || 'on';
+            const newState = currentState === 'on' ? 'off' : 'on';
+            localStorage.setItem('spock_button', newState);
+            updateSpockVisibility(newState);
+        });
+    }
+
     // --- Placeholder Logic ---
     if (localStorage.getItem('has_typed') === 'true') {
         editorTextarea.removeAttribute('placeholder');
@@ -151,9 +172,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (spockBtn) {
             e.preventDefault();
             e.stopPropagation();
-            const rect = spockBtn.getBoundingClientRect();
-            // Show menu just below the button
-            showContextMenu(rect.left, rect.bottom + 8);
+            
+            if (contextMenu.classList.contains('visible') || previousDocsMenu.classList.contains('visible')) {
+                contextMenu.classList.remove('visible');
+                previousDocsMenu.classList.remove('visible');
+            } else {
+                const rect = spockBtn.getBoundingClientRect();
+                // Show menu just below the button
+                showContextMenu(rect.left, rect.bottom + 8);
+            }
             return;
         }
 

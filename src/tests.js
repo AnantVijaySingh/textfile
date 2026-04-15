@@ -39,11 +39,12 @@ function runDrawingTests() {
     const canvas = document.getElementById('drawing-canvas');
     const editor = document.getElementById('editor');
     const wrapper = document.getElementById('editor-wrapper');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
     const contextMenu = document.getElementById('custom-context-menu');
     const menuClearCanvas = document.getElementById('menu-clear-canvas');
 
     assert(
-        canvas.style.display === 'block' && editor.style.display === 'none' && (!wrapper || wrapper.style.display === 'none'),
+        canvas.style.display === 'block' && (!canvasWrapper || canvasWrapper.style.display === 'block') && editor.style.display === 'none' && (!wrapper || wrapper.style.display === 'none'),
         'Routing: Canvas is visible and editor is hidden for #draw- hashes',
         'Display styles are incorrect for drawing mode.'
     );
