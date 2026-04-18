@@ -71,12 +71,16 @@ export function setupYjs(editorTextarea, drawingCanvas, isDrawing) {
 
         const resizeCanvas = () => {
             const rect = drawingCanvas.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) {
+                requestAnimationFrame(resizeCanvas);
+                return;
+            }
             drawingCanvas.width = rect.width;
             drawingCanvas.height = rect.height;
             renderStrokes();
         };
         window.addEventListener('resize', resizeCanvas);
-        setTimeout(resizeCanvas, 0); // initial resize
+        requestAnimationFrame(resizeCanvas); // initial resize
 
         yStrokes.observeDeep(() => {
             renderStrokes();
@@ -84,6 +88,11 @@ export function setupYjs(editorTextarea, drawingCanvas, isDrawing) {
         
         const observer = new MutationObserver(() => renderStrokes());
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+        // Ensure we render if data is already there or arrives via sync
+        persistence.on('synced', () => {
+            renderStrokes();
+        });
 
         // Local interactions
         let isPointersDown = false;

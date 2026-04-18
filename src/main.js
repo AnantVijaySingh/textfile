@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorTextarea = document.getElementById('editor');
     const editorWrapper = document.getElementById('editor-wrapper');
     const drawingCanvas = document.getElementById('drawing-canvas');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
     
     const isDrawing = window.location.hash.startsWith('#draw-');
 
@@ -20,15 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const menuPrevDocs = document.getElementById('menu-prev-docs');
     const menuClearCanvas = document.getElementById('menu-clear-canvas');
     const menuClearDb = document.getElementById('menu-clear-db');
+    const menuSpockToggle = document.getElementById('menu-spock-toggle');
     const themeText = document.getElementById('theme-text');
     const markdownText = document.getElementById('markdown-text');
+    const spockToggleText = document.getElementById('spock-toggle-text');
     const previousDocsMenu = document.getElementById('previous-docs-menu');
     const previousDocsList = document.getElementById('previous-docs-list');
 
     if (isDrawing) {
         if (editorWrapper) editorWrapper.style.display = 'none';
-        editorTextarea.style.display = 'none';
-        drawingCanvas.style.display = 'block';
+        if (editorTextarea) editorTextarea.style.display = 'none';
+        if (canvasWrapper) canvasWrapper.style.display = 'block';
+        if (drawingCanvas) drawingCanvas.style.display = 'block';
         menuClearCanvas.style.display = 'flex';
         
         const copySpan = menuCopy.querySelector('span:not(.shortcut)');
